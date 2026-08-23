@@ -22,10 +22,17 @@ trabalho, favoritar a página no navegador e usar sempre daí.
 
 ### Coisas importantes de saber
 
-- **Sua coleção fica salva no navegador**, ligada a esse arquivo, naquele
-  computador. Se você mover o arquivo de pasta, o navegador pode tratar como
-  uma página nova e não achar as marcações — então **escolha um lugar
-  definitivo antes de começar a marcar** (a pasta Downloads mesmo serve).
+- **Salva sozinho, na hora.** Cada clique nos contadores grava direto no
+  navegador (`localStorage`). Não existe botão de salvar e não tem como perder
+  por esquecer de salvar: pode fechar a aba a qualquer momento.
+- **O que guarda a coleção é o navegador, não o arquivo.** No Chrome e no Edge,
+  todas as páginas abertas do disco dividem o mesmo espaço de armazenamento —
+  testado: mover o `binder.html` de pasta, renomear ou baixar uma versão nova
+  mantém as marcações. O Firefox pode isolar por caminho do arquivo, então lá
+  vale o hábito de deixar o arquivo num lugar fixo.
+- **Não sincroniza entre aparelhos.** O que você marcar no computador não
+  aparece no celular, nem em outro navegador do mesmo computador. Cada um tem a
+  sua própria coleção. Para levar de um para o outro, use o backup.
 - **Faça backup de vez em quando**: menu **Mais → Salvar backup da coleção**.
   Isso baixa um `.json` que você guarda onde quiser e recarrega depois em
   **Mais → Importar backup**. É também assim que você leva a coleção para outro
