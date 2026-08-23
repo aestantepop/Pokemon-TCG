@@ -9,6 +9,7 @@
  */
 
 import { getSettings } from './store.js';
+import { loadJson } from './load-json.js';
 
 const LIGA_BASE = 'https://www.ligapokemon.com.br/?view=cards/card&card=';
 
@@ -17,12 +18,10 @@ let ligaPrices = null;
 /** Carrega o arquivo local de precos, se ele existir. */
 export async function loadLigaPrices() {
   try {
-    const res = await fetch('data/prices-liga.json', { cache: 'no-cache' });
-    if (!res.ok) return null;
-    ligaPrices = await res.json();
+    ligaPrices = await loadJson('data/prices-liga.json');
     return ligaPrices;
   } catch {
-    ligaPrices = null;
+    ligaPrices = null; // arquivo ausente e o caso normal: caimos na estimativa
     return null;
   }
 }

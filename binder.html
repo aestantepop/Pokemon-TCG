@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binder — Organizador de cartas Pokémon</title>
+<!-- Arquivo único gerado por scripts/build-single-file.mjs. Não edite à mão: mexa nos arquivos de js/ e css/ e rode `npm run build:html`. -->
+<style>
+:root {
+  --bg: #0d1016;
+  --bg-raised: #151a23;
+  --bg-input: #1c222d;
+  --line: #262e3b;
+  --line-soft: #1e2530;
+  --text: #e8ecf3;
+  --text-dim: #93a0b4;
+  --text-faint: #64718a;
+  --accent: #ffc531;
+  --accent-ink: #241c00;
+  --danger: #ff6b6b;
+  --ok: #4ade80;
+  --card-radius: 9px;
+  --card-w: 172px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+/* ---------- topo ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding: 14px 22px;
+  background: linear-gradient(180deg, #171d27, #10141c);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-mark { font-size: 26px; color: var(--accent); }
+.brand h1 { margin: 0; font-size: 19px; letter-spacing: -0.2px; }
+.brand p { margin: 0; font-size: 12px; color: var(--text-faint); }
+
+.picker { display: flex; gap: 12px; }
+.picker label { display: flex; flex-direction: column; gap: 4px; }
+.picker span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-faint); }
+
+select, input[type="search"], input[type="number"], .menu summary, .actions button {
+  background: var(--bg-input);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: var(--text);
+}
+
+select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.progress { margin-left: auto; min-width: 210px; }
+.progress-numbers { font-size: 20px; font-variant-numeric: tabular-nums; }
+.progress-numbers span { color: var(--text-faint); font-size: 14px; }
+.progress-bar { height: 6px; border-radius: 3px; background: var(--bg-input); overflow: hidden; margin: 5px 0 3px; }
+.progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, #ffc531, #ff8a3d); transition: width .25s; }
+.progress-label { font-size: 11px; color: var(--text-faint); }
+
+/* ---------- barra de ferramentas ---------- */
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 22px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.search-wrap { position: relative; display: flex; }
+.search-wrap input { flex: 1; padding: 9px 34px 9px 12px; }
+#search-clear {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  background: none; border: 0; font-size: 20px; color: var(--text-faint); cursor: pointer; padding: 0 8px;
+}
+
+.alphabet { display: flex; flex-wrap: wrap; gap: 3px; }
+.alphabet button {
+  min-width: 25px; padding: 3px 6px; font-size: 12px; cursor: pointer;
+  background: transparent; border: 1px solid transparent; border-radius: 5px; color: var(--text-dim);
+}
+.alphabet button:hover { background: var(--bg-input); color: var(--text); }
+.alphabet button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.switch { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-dim); cursor: pointer; }
+
+.actions { display: flex; gap: 8px; align-items: center; }
+.actions button { cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.ghost { background: transparent; }
+button.danger { color: var(--danger); }
+
+.menu { position: relative; }
+.menu summary { cursor: pointer; list-style: none; user-select: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu-body {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30;
+  display: flex; flex-direction: column; gap: 4px; min-width: 210px; padding: 6px;
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: 9px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.menu-body button {
+  text-align: left; background: none; border: 0; border-radius: 6px; padding: 8px 10px; cursor: pointer;
+}
+.menu-body button:hover { background: var(--bg-input); }
+
+/* ---------- grade ---------- */
+
+main { padding: 16px 22px 60px; }
+.result-count { margin: 0 0 12px; font-size: 12px; color: var(--text-faint); }
+.empty { text-align: center; color: var(--text-faint); padding: 50px 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+  gap: 16px;
+}
+
+.card { display: flex; flex-direction: column; gap: 7px; }
+
+.card-art {
+  position: relative;
+  aspect-ratio: 63 / 88;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  background: #0a0d12;
+  border: 1px solid var(--line-soft);
+}
+
+.card-art img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: filter .18s, opacity .18s;
+}
+
+/* Cartas que faltam ficam escuras e dessaturadas. */
+.card.missing .card-art img { filter: grayscale(1) brightness(.34) contrast(.9); }
+.card.missing .card-art::after {
+  content: ""; position: absolute; inset: 0; background: rgba(6,9,14,.45); pointer-events: none;
+}
+.card.missing .card-name { color: var(--text-faint); }
+
+.card-art .placeholder {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 4px;
+  text-align: center; color: var(--text-faint); font-size: 12px; padding: 10px;
+}
+
+/* Brilho holográfico para as cópias foil. */
+.card.foil .card-art::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background:
+    linear-gradient(115deg,
+      transparent 24%, rgba(255,255,255,.32) 38%, rgba(120,230,255,.30) 46%,
+      rgba(255,140,220,.28) 54%, rgba(255,255,255,.30) 62%, transparent 76%),
+    radial-gradient(circle at 30% 20%, rgba(255,220,120,.22), transparent 55%);
+  mix-blend-mode: screen;
+  background-size: 260% 260%;
+  animation: shimmer 5.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%, 0 0; }
+  50% { background-position: 100% 50%, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.foil .card-art::before { animation: none; background-position: 50% 50%, 0 0; }
+}
+
+.badges { position: absolute; top: 6px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 4px; flex-wrap: wrap; }
+.badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .4px; padding: 2px 6px; border-radius: 20px;
+  background: rgba(8,11,16,.82); color: var(--text-dim); backdrop-filter: blur(3px);
+}
+.badge.rarity { color: var(--accent); }
+.badge.foil-tag { background: linear-gradient(90deg,#7ee8ff,#ff9ae0); color: #16121c; }
+.badge.count { margin-left: auto; background: var(--ok); color: #052912; }
+
+.card-info { display: flex; align-items: baseline; gap: 6px; min-height: 20px; }
+.card-num { font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.card-name { font-size: 13px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-price { margin-left: auto; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card-price.estimated { color: var(--text-faint); font-style: italic; }
+
+.variants { display: flex; flex-direction: column; gap: 4px; }
+.variant { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+.variant-label { flex: 1; text-transform: uppercase; letter-spacing: .5px; font-size: 10px; }
+.variant.has .variant-label { color: var(--text); }
+.stepper { display: flex; align-items: center; gap: 2px; }
+.stepper button {
+  width: 20px; height: 20px; line-height: 1; padding: 0; cursor: pointer;
+  background: var(--bg-input); border: 1px solid var(--line); border-radius: 5px; color: var(--text-dim);
+}
+.stepper button:hover { border-color: var(--accent); color: var(--accent); }
+.stepper .qty { min-width: 18px; text-align: center; font-variant-numeric: tabular-nums; color: var(--text); }
+.variant.zero .qty { color: var(--text-faint); }
+
+.card-links { display: flex; gap: 8px; font-size: 10px; }
+.card-links a { color: var(--text-faint); text-decoration: none; }
+.card-links a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ---------- rodapé ---------- */
+
+.statusbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 15;
+  display: flex; gap: 16px; align-items: center;
+  padding: 6px 22px; font-size: 11px; color: var(--text-faint);
+  background: rgba(13,16,22,.94); border-top: 1px solid var(--line); backdrop-filter: blur(6px);
+}
+.statusbar .spacer { flex: 1; }
+.statusbar a { color: var(--text-faint); text-decoration: none; }
+.statusbar a:hover { color: var(--accent); }
+
+/* ---------- diálogos ---------- */
+
+dialog {
+  border: 1px solid var(--line); border-radius: 12px; padding: 0;
+  background: var(--bg-raised); color: var(--text); max-width: 460px;
+}
+dialog::backdrop { background: rgba(4,6,10,.7); }
+.dialog-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+.dialog-body h2 { margin: 0; font-size: 17px; }
+.dialog-body .hint { margin: 0; font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.dialog-body .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.dialog-body .steps { margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+.dialog-body code { background: var(--bg-input); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.small-input { width: 90px; }
+dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 4px 0 0; padding: 0; }
+dialog menu button { cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: var(--bg-input); padding: 7px 14px; }
+
+/* ---------- impressão ---------- */
+
+.print-root { display: none; }
+
+@page { size: A4 portrait; margin: 8mm; }
+
+@media print {
+  body { background: #fff; color: #000; }
+  .topbar, .toolbar, main, .statusbar, dialog { display: none !important; }
+  .print-root { display: block; }
+
+  .sheet {
+    display: grid;
+    grid-template-columns: repeat(3, 63mm);
+    grid-template-rows: repeat(3, 88mm);
+    gap: 2mm;
+    justify-content: center;
+    align-content: start;
+    page-break-after: always;
+    break-after: page;
+  }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+
+  .sheet-head {
+    display: flex; justify-content: space-between;
+    font: 8pt/1 "Helvetica", Arial, sans-serif; color: #555;
+    padding-bottom: 2mm; margin-bottom: 1mm; border-bottom: .3pt solid #bbb;
+  }
+
+  .slot {
+    position: relative; overflow: hidden;
+    border: .4pt solid #999; border-radius: 3mm;
+    display: flex; flex-direction: column;
+    font: 8pt/1.2 "Helvetica", Arial, sans-serif; color: #111;
+    background: #fff;
+  }
+  .slot.blank { border-style: dashed; border-color: #ddd; }
+  .slot img {
+    width: 100%; height: 100%; object-fit: cover;
+    filter: grayscale(1) opacity(.30);
+    position: absolute; inset: 0;
+  }
+  .slot-text { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; padding: 3mm; }
+  .slot-num { font-size: 7.5pt; color: #666; letter-spacing: .3px; }
+  .slot-name { font-size: 11pt; font-weight: 700; margin-top: 1.5mm; line-height: 1.15; }
+  .slot-meta { font-size: 7.5pt; color: #555; margin-top: 1mm; }
+  .slot-foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 7.5pt; color: #444; }
+  .slot-price { font-weight: 700; }
+}
+
+</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗂️</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◈</span>
+    <div>
+      <h1>Binder</h1>
+      <p>Organizador de cartas Pokémon</p>
+    </div>
+  </div>
+
+  <div class="picker">
+    <label>
+      <span>Lançamento</span>
+      <select id="series-select"></select>
+    </label>
+    <label>
+      <span>Expansão</span>
+      <select id="set-select"></select>
+    </label>
+  </div>
+
+  <div class="progress" id="progress">
+    <div class="progress-numbers"><strong id="progress-have">0</strong><span id="progress-total">/0</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">carregando…</div>
+  </div>
+</header>
+
+<nav class="toolbar">
+  <div class="search-wrap">
+    <input id="search" type="search" autocomplete="off"
+           placeholder="Buscar por nome, número, tipo, raridade ou texto da carta…">
+    <button type="button" id="search-clear" class="icon-btn" title="Limpar busca" hidden>×</button>
+  </div>
+
+  <div class="alphabet" id="alphabet"></div>
+
+  <div class="filters">
+    <select id="filter-owned">
+      <option value="all">Todas</option>
+      <option value="missing">Só as que faltam</option>
+      <option value="incomplete">Binder incompleto (falta normal ou reverse)</option>
+      <option value="owned">Só as que tenho</option>
+      <option value="foil">Só as foil que tenho</option>
+    </select>
+    <select id="filter-rarity"><option value="all">Todas as raridades</option></select>
+    <select id="filter-type"><option value="all">Todos os tipos</option></select>
+    <select id="sort">
+      <option value="number">Ordem do set</option>
+      <option value="name">Nome (A–Z)</option>
+      <option value="rarity">Raridade</option>
+      <option value="price">Preço (maior primeiro)</option>
+    </select>
+    <label class="switch">
+      <input type="checkbox" id="split-reverse">
+      <span>Reverse holo como carta separada</span>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="button" id="btn-print" class="primary">Exportar PDF do binder</button>
+    <details class="menu">
+      <summary>Mais</summary>
+      <div class="menu-body">
+        <button type="button" id="btn-prices">Atualizar preços</button>
+        <button type="button" id="btn-export">Salvar backup da coleção</button>
+        <button type="button" id="btn-import">Importar backup</button>
+        <input type="file" id="import-file" accept="application/json" hidden>
+        <button type="button" id="btn-reset" class="danger">Zerar esta expansão</button>
+      </div>
+    </details>
+  </div>
+</nav>
+
+<main>
+  <p class="result-count" id="result-count"></p>
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty" hidden>Nenhuma carta encontrada com esses filtros.</p>
+</main>
+
+<footer class="statusbar">
+  <span id="status">…</span>
+  <span class="spacer"></span>
+  <a id="link-pkmncards" href="https://pkmncards.com/set/surging-sparks/" target="_blank" rel="noopener">pkmncards</a>
+  <a id="link-watchtower" href="https://tcgwatchtower.com/pokemon/sets/scarlet-violet/surging-sparks/cards" target="_blank" rel="noopener">TCG Watchtower</a>
+  <a id="link-liga" href="https://www.ligapokemon.com.br" target="_blank" rel="noopener">Liga Pokémon</a>
+</footer>
+
+<!-- Diálogo de impressão -->
+<dialog id="print-dialog">
+  <form method="dialog" class="dialog-body">
+    <h2>Exportar PDF para o binder</h2>
+    <p class="hint">Gera folhas 3×3 no tamanho real da carta (63×88&nbsp;mm) com as cartas que faltam,
+       para imprimir e colocar nos bolsos vazios.</p>
+    <label class="row"><input type="checkbox" id="print-images" checked> Imprimir a imagem da carta</label>
+    <label class="row"><input type="checkbox" id="print-reverse"> Incluir os reverse holo que faltam</label>
+    <label class="row"><input type="checkbox" id="print-secrets" checked> Incluir as secretas (192–252)</label>
+    <label class="row"><input type="checkbox" id="print-prices" checked> Mostrar o preço na carta</label>
+    <label class="row"><input type="checkbox" id="print-filtered"> Usar os filtros/busca da tela</label>
+    <p class="hint" id="print-summary"></p>
+    <menu>
+      <button value="cancel" class="ghost">Cancelar</button>
+      <button value="print" id="print-go" class="primary">Gerar PDF</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- Diálogo de preços -->
+<dialog id="prices-dialog">
+  <form method="dialog" class="dialog-body">
+    <h2>Preços</h2>
+    <p class="hint">O Liga Pokémon não oferece API pública nem libera acesso direto do navegador (CORS),
+      então os preços dele entram por um arquivo gerado na sua máquina.</p>
+    <ol class="steps">
+      <li>Na pasta do projeto rode <code>node scripts/fetch-liga-prices.mjs sv08</code></li>
+      <li>Isso grava <code>data/prices-liga.json</code></li>
+      <li>Recarregue esta página — os preços aparecem em R$ com a marca <b>Liga</b></li>
+    </ol>
+    <p class="hint">Sem esse arquivo o app mostra o preço de mercado internacional convertido, marcado como
+      <b>estimado</b>. Cada carta tem link direto para a página dela no Liga.</p>
+    <label class="row">Cotação do dólar (R$)
+      <input type="number" id="usd-rate" step="0.01" min="0" class="small-input">
+    </label>
+    <menu>
+      <button value="cancel" class="ghost">Fechar</button>
+      <button value="reload" id="prices-reload" class="primary">Recarregar preços</button>
+    </menu>
+  </form>
+</dialog>
+
+<div id="print-root" class="print-root" aria-hidden="true"></div>
+
+<script>
+(function () {
+"use strict";
+const EMBEDDED_DATA = {"data/sets.json":{"series":[{"id":"sv","name":"Scarlet & Violet","sets":[{"id":"sv08","code":"SSP","name":"Surging Sparks","releaseDate":"2024-11-08","total":252,"data":"data/sv08-surging-sparks.json"}]}]},"data/sv08-surging-sparks.json":{"id":"sv08","apiId":"sv8","code":"SSP","name":"Surging Sparks","series":"Scarlet & Violet","releaseDate":"2024-11-08","printedTotal":191,"total":252,"reverseHoloCount":165,"links":{"pkmncards":"https://pkmncards.com/set/surging-sparks/","watchtower":"https://tcgwatchtower.com/pokemon/sets/scarlet-violet/surging-sparks/cards","ligapokemon":"https://www.ligapokemon.com.br/?view=cards/card&card=Surging%20Sparks"},"cards":[{"number":1,"display":"001","name":"Exeggcute","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":2,"display":"002","name":"Exeggcute","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":3,"display":"003","name":"Exeggutor","rarity":"U","rarityLabel":"Incomum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":4,"display":"004","name":"Durant ex","rarity":"DR","rarityLabel":"Double Rare","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":5,"display":"005","name":"Scatterbug","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":6,"display":"006","name":"Spewpa","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":7,"display":"007","name":"Vivillon","rarity":"U","rarityLabel":"Incomum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":8,"display":"008","name":"Morelull","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":9,"display":"009","name":"Shiinotic","rarity":"U","rarityLabel":"Incomum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":10,"display":"010","name":"Dhelmise","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":11,"display":"011","name":"Zarude","rarity":"R","rarityLabel":"Rara","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":12,"display":"012","name":"Capsakid","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":13,"display":"013","name":"Rellor","rarity":"C","rarityLabel":"Comum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":14,"display":"014","name":"Rabsca","rarity":"R","rarityLabel":"Rara","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":15,"display":"015","name":"Wo-Chien","rarity":"U","rarityLabel":"Incomum","type":"Grass","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":16,"display":"016","name":"Vulpix","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":17,"display":"017","name":"Ninetales","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":18,"display":"018","name":"Paldean Tauros","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":19,"display":"019","name":"Ho-Oh","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":20,"display":"020","name":"Castform Sunny Form","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":21,"display":"021","name":"Victini","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":22,"display":"022","name":"Pansear","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":23,"display":"023","name":"Simisear","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":24,"display":"024","name":"Larvesta","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":25,"display":"025","name":"Volcarona","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":26,"display":"026","name":"Oricorio","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":27,"display":"027","name":"Sizzlipede","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":28,"display":"028","name":"Centiskorch","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":29,"display":"029","name":"Fuecoco","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":30,"display":"030","name":"Crocalor","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":31,"display":"031","name":"Skeledirge","rarity":"R","rarityLabel":"Rara","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":32,"display":"032","name":"Charcadet","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":33,"display":"033","name":"Charcadet","rarity":"C","rarityLabel":"Comum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":34,"display":"034","name":"Armarouge","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":35,"display":"035","name":"Ceruledge","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":36,"display":"036","name":"Ceruledge ex","rarity":"DR","rarityLabel":"Double Rare","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":37,"display":"037","name":"Scovillain ex","rarity":"DR","rarityLabel":"Double Rare","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":38,"display":"038","name":"Gouging Fire","rarity":"R","rarityLabel":"Rara","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":39,"display":"039","name":"Paldean Tauros","rarity":"U","rarityLabel":"Incomum","type":"Fire","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":40,"display":"040","name":"Mantine","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":41,"display":"041","name":"Feebas","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":42,"display":"042","name":"Milotic ex","rarity":"DR","rarityLabel":"Double Rare","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":43,"display":"043","name":"Spheal","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":44,"display":"044","name":"Sealeo","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":45,"display":"045","name":"Walrein","rarity":"U","rarityLabel":"Incomum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":46,"display":"046","name":"Shellos","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":47,"display":"047","name":"Cryogonal","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":48,"display":"048","name":"Black Kyurem ex","rarity":"DR","rarityLabel":"Double Rare","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":49,"display":"049","name":"Bruxish","rarity":"U","rarityLabel":"Incomum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":50,"display":"050","name":"Quaxly","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":51,"display":"051","name":"Quaxwell","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":52,"display":"052","name":"Quaquaval","rarity":"U","rarityLabel":"Incomum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":53,"display":"053","name":"Cetoddle","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":54,"display":"054","name":"Cetitan","rarity":"C","rarityLabel":"Comum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":55,"display":"055","name":"Iron Bundle","rarity":"U","rarityLabel":"Incomum","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":56,"display":"056","name":"Chien-Pao","rarity":"R","rarityLabel":"Rara","type":"Water","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":57,"display":"057","name":"Pikachu ex","rarity":"DR","rarityLabel":"Double Rare","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":58,"display":"058","name":"Magnemite","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":59,"display":"059","name":"Magneton","rarity":"U","rarityLabel":"Incomum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":60,"display":"060","name":"Magnezone","rarity":"U","rarityLabel":"Incomum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":61,"display":"061","name":"Rotom","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":62,"display":"062","name":"Blitzle","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":63,"display":"063","name":"Zebstrika","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":64,"display":"064","name":"Stunfisk","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":65,"display":"065","name":"Tapu Koko","rarity":"R","rarityLabel":"Rara","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":66,"display":"066","name":"Wattrel","rarity":"C","rarityLabel":"Comum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":67,"display":"067","name":"Kilowattrel","rarity":"U","rarityLabel":"Incomum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":68,"display":"068","name":"Kilowattrel ex","rarity":"DR","rarityLabel":"Double Rare","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":69,"display":"069","name":"Miraidon","rarity":"U","rarityLabel":"Incomum","type":"Lightning","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":70,"display":"070","name":"Togepi","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":71,"display":"071","name":"Togetic","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":72,"display":"072","name":"Togekiss","rarity":"R","rarityLabel":"Rara","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":73,"display":"073","name":"Marill","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":74,"display":"074","name":"Azumarill","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":75,"display":"075","name":"Smoochum","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":76,"display":"076","name":"Latias ex","rarity":"DR","rarityLabel":"Double Rare","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":77,"display":"077","name":"Latios","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":78,"display":"078","name":"Uxie","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":79,"display":"079","name":"Mesprit","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":80,"display":"080","name":"Azelf","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":81,"display":"081","name":"Sigilyph","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":82,"display":"082","name":"Yamask","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":83,"display":"083","name":"Cofagrigus","rarity":"R","rarityLabel":"Rara","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":84,"display":"084","name":"Espurr","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":85,"display":"085","name":"Meowstic","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":86,"display":"086","name":"Sylveon ex","rarity":"DR","rarityLabel":"Double Rare","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":87,"display":"087","name":"Dedenne","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":88,"display":"088","name":"Xerneas","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":89,"display":"089","name":"Oricorio","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":90,"display":"090","name":"Sandygast","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":91,"display":"091","name":"Palossand ex","rarity":"DR","rarityLabel":"Double Rare","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":92,"display":"092","name":"Tapu Lele","rarity":"R","rarityLabel":"Rara","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":93,"display":"093","name":"Indeedee","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":94,"display":"094","name":"Flittle","rarity":"C","rarityLabel":"Comum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":95,"display":"095","name":"Espathra","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":96,"display":"096","name":"Flutter Mane","rarity":"U","rarityLabel":"Incomum","type":"Psychic","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":97,"display":"097","name":"Gimmighoul","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":98,"display":"098","name":"Mankey","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":99,"display":"099","name":"Primeape","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":100,"display":"100","name":"Annihilape","rarity":"U","rarityLabel":"Incomum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":101,"display":"101","name":"Paldean Tauros","rarity":"U","rarityLabel":"Incomum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":102,"display":"102","name":"Phanpy","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":103,"display":"103","name":"Donphan","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":104,"display":"104","name":"Trapinch","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":105,"display":"105","name":"Vibrava","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":106,"display":"106","name":"Flygon ex","rarity":"DR","rarityLabel":"Double Rare","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":107,"display":"107","name":"Gastrodon","rarity":"R","rarityLabel":"Rara","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":108,"display":"108","name":"Drilbur","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":109,"display":"109","name":"Excadrill","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":110,"display":"110","name":"Landorus","rarity":"R","rarityLabel":"Rara","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":111,"display":"111","name":"Passimian","rarity":"U","rarityLabel":"Incomum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":112,"display":"112","name":"Clobbopus","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":113,"display":"113","name":"Grapploct","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":114,"display":"114","name":"Glimmet","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":115,"display":"115","name":"Glimmora","rarity":"C","rarityLabel":"Comum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":116,"display":"116","name":"Koraidon","rarity":"U","rarityLabel":"Incomum","type":"Fighting","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":117,"display":"117","name":"Deino","rarity":"C","rarityLabel":"Comum","type":"Darkness","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":118,"display":"118","name":"Zweilous","rarity":"C","rarityLabel":"Comum","type":"Darkness","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":119,"display":"119","name":"Hydreigon ex","rarity":"DR","rarityLabel":"Double Rare","type":"Darkness","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":120,"display":"120","name":"Shroodle","rarity":"C","rarityLabel":"Comum","type":"Darkness","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":121,"display":"121","name":"Grafaiai","rarity":"U","rarityLabel":"Incomum","type":"Darkness","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":122,"display":"122","name":"Alolan Diglett","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":123,"display":"123","name":"Alolan Dugtrio","rarity":"U","rarityLabel":"Incomum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":124,"display":"124","name":"Skarmory","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":125,"display":"125","name":"Registeel","rarity":"U","rarityLabel":"Incomum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":126,"display":"126","name":"Bronzor","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":127,"display":"127","name":"Bronzong","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":128,"display":"128","name":"Klefki","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":129,"display":"129","name":"Duraludon","rarity":"C","rarityLabel":"Comum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":130,"display":"130","name":"Archaludon ex","rarity":"DR","rarityLabel":"Double Rare","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":131,"display":"131","name":"Gholdengo","rarity":"U","rarityLabel":"Incomum","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":132,"display":"132","name":"Iron Crown","rarity":"R","rarityLabel":"Rara","type":"Metal","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":133,"display":"133","name":"Alolan Exeggutor ex","rarity":"DR","rarityLabel":"Double Rare","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":134,"display":"134","name":"Altaria","rarity":"U","rarityLabel":"Incomum","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":135,"display":"135","name":"Dialga","rarity":"R","rarityLabel":"Rara","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":136,"display":"136","name":"Palkia","rarity":"R","rarityLabel":"Rara","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":137,"display":"137","name":"Turtonator","rarity":"U","rarityLabel":"Incomum","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":138,"display":"138","name":"Applin","rarity":"C","rarityLabel":"Comum","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":139,"display":"139","name":"Flapple","rarity":"U","rarityLabel":"Incomum","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":140,"display":"140","name":"Appletun","rarity":"U","rarityLabel":"Incomum","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":141,"display":"141","name":"Eternatus","rarity":"R","rarityLabel":"Rara","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":142,"display":"142","name":"Tatsugiri ex","rarity":"DR","rarityLabel":"Double Rare","type":"Dragon","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":143,"display":"143","name":"Eevee","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":144,"display":"144","name":"Snorlax","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":145,"display":"145","name":"Slakoth","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":146,"display":"146","name":"Vigoroth","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":147,"display":"147","name":"Slaking ex","rarity":"DR","rarityLabel":"Double Rare","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":148,"display":"148","name":"Swablu","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":149,"display":"149","name":"Zangoose","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":150,"display":"150","name":"Kecleon","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":151,"display":"151","name":"Bouffalant","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":152,"display":"152","name":"Rufflet","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":153,"display":"153","name":"Braviary","rarity":"U","rarityLabel":"Incomum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":154,"display":"154","name":"Helioptile","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":155,"display":"155","name":"Heliolisk","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":156,"display":"156","name":"Oranguru","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":157,"display":"157","name":"Tandemaus","rarity":"C","rarityLabel":"Comum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":158,"display":"158","name":"Maushold","rarity":"U","rarityLabel":"Incomum","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":159,"display":"159","name":"Cyclizar ex","rarity":"DR","rarityLabel":"Double Rare","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":160,"display":"160","name":"Flamigo ex","rarity":"DR","rarityLabel":"Double Rare","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":161,"display":"161","name":"Terapagos","rarity":"R","rarityLabel":"Rara","type":"Colorless","supertype":"Pokemon","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":162,"display":"162","name":"Carta #162","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":163,"display":"163","name":"Babiri Berry","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":164,"display":"164","name":"Carta #164","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":165,"display":"165","name":"Call Bell","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":166,"display":"166","name":"Chill Teaser Toy","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":167,"display":"167","name":"Clemont's Quick Wit","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":168,"display":"168","name":"Colbur Berry","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":169,"display":"169","name":"Counter Gain","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":170,"display":"170","name":"Cyrano","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":171,"display":"171","name":"Deduction Kit","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":172,"display":"172","name":"Dragon Elixir","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":173,"display":"173","name":"Drasna","rarity":"C","rarityLabel":"Comum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":174,"display":"174","name":"Drayton","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":175,"display":"175","name":"Dusk Ball","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":176,"display":"176","name":"Carta #176","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":177,"display":"177","name":"Gravity Mountain","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":178,"display":"178","name":"Jasmine's Gaze","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":179,"display":"179","name":"Lisia's Appeal","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":180,"display":"180","name":"Lively Stadium","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":181,"display":"181","name":"Meddling Memo","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":182,"display":"182","name":"Carta #182","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":183,"display":"183","name":"Carta #183","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":184,"display":"184","name":"Passho Berry","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":185,"display":"185","name":"Carta #185","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":186,"display":"186","name":"Carta #186","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":187,"display":"187","name":"Surfer","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":188,"display":"188","name":"Technical Machine: Fluorite","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":189,"display":"189","name":"Tera Orb","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":190,"display":"190","name":"Tyme","rarity":"U","rarityLabel":"Incomum","type":"Trainer","supertype":"Trainer","secret":false,"alwaysFoil":false,"hasReverse":true,"text":null,"image":null},{"number":191,"display":"191","name":"Carta #191","rarity":"U","rarityLabel":"Incomum","type":"Energy","supertype":"Energy","secret":false,"alwaysFoil":false,"hasReverse":false,"text":null,"image":null,"unresolved":true},{"number":192,"display":"192","name":"Exeggcute","rarity":"IR","rarityLabel":"Illustration Rare","type":"Grass","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":193,"display":"193","name":"Vivillon","rarity":"IR","rarityLabel":"Illustration Rare","type":"Grass","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":194,"display":"194","name":"Shiinotic","rarity":"IR","rarityLabel":"Illustration Rare","type":"Grass","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":195,"display":"195","name":"Castform Sunny Form","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fire","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":196,"display":"196","name":"Larvesta","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fire","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":197,"display":"197","name":"Ceruledge","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fire","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":198,"display":"198","name":"Feebas","rarity":"IR","rarityLabel":"Illustration Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":199,"display":"199","name":"Spheal","rarity":"IR","rarityLabel":"Illustration Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":200,"display":"200","name":"Bruxish","rarity":"IR","rarityLabel":"Illustration Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":201,"display":"201","name":"Cetitan","rarity":"IR","rarityLabel":"Illustration Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":202,"display":"202","name":"Stunfisk","rarity":"IR","rarityLabel":"Illustration Rare","type":"Lightning","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":203,"display":"203","name":"Latios","rarity":"IR","rarityLabel":"Illustration Rare","type":"Psychic","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":204,"display":"204","name":"Mesprit","rarity":"IR","rarityLabel":"Illustration Rare","type":"Psychic","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":205,"display":"205","name":"Phanpy","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fighting","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":206,"display":"206","name":"Vibrava","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fighting","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":207,"display":"207","name":"Clobbopus","rarity":"IR","rarityLabel":"Illustration Rare","type":"Fighting","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":208,"display":"208","name":"Alolan Dugtrio","rarity":"IR","rarityLabel":"Illustration Rare","type":"Metal","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":209,"display":"209","name":"Skarmory","rarity":"IR","rarityLabel":"Illustration Rare","type":"Metal","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":210,"display":"210","name":"Flapple","rarity":"IR","rarityLabel":"Illustration Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":211,"display":"211","name":"Appletun","rarity":"IR","rarityLabel":"Illustration Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":212,"display":"212","name":"Slakoth","rarity":"IR","rarityLabel":"Illustration Rare","type":"Colorless","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":213,"display":"213","name":"Kecleon","rarity":"IR","rarityLabel":"Illustration Rare","type":"Colorless","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":214,"display":"214","name":"Braviary","rarity":"IR","rarityLabel":"Illustration Rare","type":"Colorless","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":215,"display":"215","name":"Durant ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Grass","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":216,"display":"216","name":"Scovillain ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Fire","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":217,"display":"217","name":"Milotic ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":218,"display":"218","name":"Black Kyurem ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":219,"display":"219","name":"Pikachu ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Lightning","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":220,"display":"220","name":"Latias ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Psychic","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":221,"display":"221","name":"Palossand ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Psychic","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":222,"display":"222","name":"Flygon ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Fighting","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":223,"display":"223","name":"Hydreigon ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Darkness","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":224,"display":"224","name":"Archaludon ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Metal","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":225,"display":"225","name":"Alolan Exeggutor ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":226,"display":"226","name":"Tatsugiri ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":227,"display":"227","name":"Slaking ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Colorless","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":228,"display":"228","name":"Cyclizar ex","rarity":"UR","rarityLabel":"Ultra Rare","type":"Colorless","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":229,"display":"229","name":"Clemont's Quick Wit","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":230,"display":"230","name":"Cyrano","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":231,"display":"231","name":"Drasna","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":232,"display":"232","name":"Drayton","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":233,"display":"233","name":"Jasmine's Gaze","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":234,"display":"234","name":"Lisia's Appeal","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":235,"display":"235","name":"Surfer","rarity":"UR","rarityLabel":"Ultra Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":236,"display":"236","name":"Durant ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Grass","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":237,"display":"237","name":"Milotic ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Water","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":238,"display":"238","name":"Pikachu ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Lightning","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":239,"display":"239","name":"Latias ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Psychic","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":240,"display":"240","name":"Hydreigon ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Darkness","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":241,"display":"241","name":"Archaludon ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Metal","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":242,"display":"242","name":"Alolan Exeggutor ex","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":243,"display":"243","name":"Clemont's Quick Wit","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":244,"display":"244","name":"Drayton","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":245,"display":"245","name":"Jasmine's Gaze","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":246,"display":"246","name":"Lisia's Appeal","rarity":"SIR","rarityLabel":"Special Illustration Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":247,"display":"247","name":"Pikachu ex","rarity":"HR","rarityLabel":"Hyper Rare","type":"Lightning","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":248,"display":"248","name":"Alolan Exeggutor ex","rarity":"HR","rarityLabel":"Hyper Rare","type":"Dragon","supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":249,"display":"249","name":"Counter Gain","rarity":"HR","rarityLabel":"Hyper Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":250,"display":"250","name":"Gravity Mountain","rarity":"HR","rarityLabel":"Hyper Rare","type":"Trainer","supertype":"Trainer","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":251,"display":"251","name":"Night Stretcher","rarity":"HR","rarityLabel":"Hyper Rare","type":null,"supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null},{"number":252,"display":"252","name":"Jet Energy","rarity":"HR","rarityLabel":"Hyper Rare","type":null,"supertype":"Pokemon","secret":true,"alwaysFoil":true,"hasReverse":false,"text":null,"image":null}]}};
+
+/* ===== js/labels.js ===== */
+/** Rotulos em portugues compartilhados entre a tela e a impressao. */
+
+const TYPE_LABELS = {
+  Grass: 'Planta', Fire: 'Fogo', Water: 'Água', Lightning: 'Elétrico',
+  Psychic: 'Psíquico', Fighting: 'Lutador', Darkness: 'Sombrio', Metal: 'Metálico',
+  Dragon: 'Dragão', Colorless: 'Incolor', Fairy: 'Fada',
+  Trainer: 'Treinador', Energy: 'Energia',
+};
+
+/** Ordem de raridade do mais comum para o mais raro. */
+const RARITY_ORDER = ['C', 'U', 'R', 'DR', 'IR', 'UR', 'SIR', 'HR'];
+
+const typeLabel = (type) => TYPE_LABELS[type] ?? type ?? '—';
+
+/* ===== js/load-json.js ===== */
+/**
+ * Carrega um JSON que faz parte do app.
+ *
+ * Fica isolado num modulo porque a versao de arquivo unico (binder.html)
+ * substitui esta funcao por uma leitura dos dados ja embutidos na pagina --
+ * assim o app abre com dois cliques, sem servidor.
+ */
+let loadJson = async function loadJson(path) {
+  const res = await fetch(path, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`Não consegui carregar ${path} (HTTP ${res.status})`);
+  return res.json();
+};
+
+loadJson = async (path) => {
+  if (path in EMBEDDED_DATA) return structuredClone(EMBEDDED_DATA[path]);
+  throw new Error(`${path} não está embutido nesta versão.`);
+};
+
+/* ===== js/store.js ===== */
+/**
+ * Estado da colecao, persistido em localStorage.
+ *
+ * Formato: { [setId]: { [numero]: { n, r, f } } }
+ *   n = copias normais       (raridades C / U / R)
+ *   r = copias reverse holo  (so quando a carta tem impressao RH)
+ *   f = copias foil          (DR / IR / UR / SIR / HR, que ja saem foil)
+ * Chaves com valor zero sao removidas para o backup ficar enxuto.
+ */
+
+const KEY = 'binder.collection.v1';
+const SETTINGS_KEY = 'binder.settings.v1';
+
+const listeners = new Set();
+
+function readJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+let collection = readJson(KEY, {});
+let settings = { usdRate: 5.4, ...readJson(SETTINGS_KEY, {}) };
+
+function persist() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(collection));
+  } catch (err) {
+    console.warn('Nao foi possivel salvar a colecao', err);
+  }
+}
+
+function emit() {
+  for (const fn of listeners) fn();
+}
+
+/** Variantes que a carta pode ter, na ordem em que aparecem na interface. */
+function variantsOf(card) {
+  if (card.alwaysFoil) return [{ key: 'f', label: 'Foil', foil: true }];
+  const out = [{ key: 'n', label: 'Normal', foil: false }];
+  if (card.hasReverse) out.push({ key: 'r', label: 'Reverse', foil: true });
+  return out;
+}
+
+function onChange(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function entry(setId, number) {
+  return collection[setId]?.[number] ?? {};
+}
+
+function qty(setId, number, variant) {
+  return entry(setId, number)[variant] ?? 0;
+}
+
+/** Total de copias da carta somando todas as variantes. */
+function totalQty(setId, number) {
+  const e = entry(setId, number);
+  return (e.n ?? 0) + (e.r ?? 0) + (e.f ?? 0);
+}
+
+function hasCard(setId, number) {
+  return totalQty(setId, number) > 0;
+}
+
+/** A carta esta representada por alguma copia foil (reverse ou foil)? */
+function hasFoil(setId, number) {
+  const e = entry(setId, number);
+  return (e.r ?? 0) > 0 || (e.f ?? 0) > 0;
+}
+
+function setQty(setId, number, variant, value) {
+  const next = Math.max(0, Math.min(99, Math.round(value) || 0));
+  const set = collection[setId] ?? (collection[setId] = {});
+  const card = set[number] ?? (set[number] = {});
+  if (next === 0) delete card[variant];
+  else card[variant] = next;
+  if (Object.keys(card).length === 0) delete set[number];
+  if (Object.keys(set).length === 0) delete collection[setId];
+  persist();
+  emit();
+}
+
+function bump(setId, number, variant, delta) {
+  setQty(setId, number, variant, qty(setId, number, variant) + delta);
+}
+
+function resetSet(setId) {
+  delete collection[setId];
+  persist();
+  emit();
+}
+
+function exportBackup() {
+  return JSON.stringify(
+    { app: 'binder', version: 1, exportedAt: new Date().toISOString(), collection, settings },
+    null,
+    2,
+  );
+}
+
+/** Importa um backup. `merge` soma as quantidades em vez de substituir. */
+function importBackup(json, { merge = false } = {}) {
+  const data = typeof json === 'string' ? JSON.parse(json) : json;
+  const incoming = data?.collection;
+  if (!incoming || typeof incoming !== 'object') throw new Error('Backup invalido: falta "collection".');
+
+  if (!merge) {
+    collection = incoming;
+  } else {
+    for (const [setId, cards] of Object.entries(incoming)) {
+      const target = collection[setId] ?? (collection[setId] = {});
+      for (const [number, variants] of Object.entries(cards)) {
+        const slot = target[number] ?? (target[number] = {});
+        for (const [variant, value] of Object.entries(variants)) {
+          slot[variant] = Math.min(99, (slot[variant] ?? 0) + (Number(value) || 0));
+        }
+      }
+    }
+  }
+  if (data.settings) updateSettings(data.settings);
+  persist();
+  emit();
+}
+
+function getSettings() {
+  return { ...settings };
+}
+
+function updateSettings(patch) {
+  settings = { ...settings, ...patch };
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch { /* cota cheia: as configuracoes nao sao criticas */ }
+  emit();
+}
+
+/** Resumo de progresso do set, contando slots de binder (carta + reverse). */
+function progress(cards, setId) {
+  let slots = 0;
+  let filled = 0;
+  let copies = 0;
+  for (const card of cards) {
+    for (const v of variantsOf(card)) {
+      slots += 1;
+      const q = qty(setId, card.number, v.key);
+      if (q > 0) filled += 1;
+      copies += q;
+    }
+  }
+  return { slots, filled, copies, pct: slots ? (filled / slots) * 100 : 0 };
+}
+
+const store = { variantsOf, onChange, entry, qty, totalQty, hasCard, hasFoil, setQty, bump, resetSet, exportBackup, importBackup, getSettings, updateSettings, progress };
+
+/* ===== js/enrich.js ===== */
+/**
+ * Completa os dados do set com a API publica do Pokemon TCG.
+ *
+ * O checklist local traz numero, nome e raridade; a API traz tipo, texto da
+ * carta e a imagem oficial. A busca acontece no navegador (o app e estatico) e
+ * o resultado fica em cache no localStorage, entao so a primeira visita precisa
+ * de internet. As imagens vem de images.pokemontcg.io e funcionam mesmo se a
+ * chamada de metadados falhar.
+ */
+
+const API = 'https://api.pokemontcg.io/v2/cards';
+const IMAGES = 'https://images.pokemontcg.io';
+const CACHE_PREFIX = 'binder.cards.v1.';
+const CACHE_TTL = 1000 * 60 * 60 * 24 * 30; // 30 dias
+
+/** Raridade da API -> codigo curto usado no checklist. */
+const RARITY_CODES = {
+  'Common': 'C',
+  'Uncommon': 'U',
+  'Rare': 'R',
+  'Double Rare': 'DR',
+  'Illustration Rare': 'IR',
+  'Ultra Rare': 'UR',
+  'Special Illustration Rare': 'SIR',
+  'Hyper Rare': 'HR',
+  'Rare Holo': 'R',
+  'Shiny Rare': 'IR',
+  'Shiny Ultra Rare': 'SIR',
+};
+
+const imageUrl = (apiId, number, size = 'small') =>
+  `${IMAGES}/${apiId}/${number}${size === 'large' ? '_hires' : ''}.png`;
+
+function readCache(setId) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + setId);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached?.fetchedAt || Date.now() - cached.fetchedAt > CACHE_TTL) return null;
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(setId, byNumber) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + setId, JSON.stringify({ fetchedAt: Date.now(), byNumber }));
+  } catch (err) {
+    console.warn('Cache de cartas nao pode ser gravado', err);
+  }
+}
+
+function clearCache(setId) {
+  localStorage.removeItem(CACHE_PREFIX + setId);
+}
+
+/** Junta tudo que serve de "descricao" da carta num texto unico pesquisavel. */
+function describe(apiCard) {
+  const parts = [];
+  if (apiCard.flavorText) parts.push(apiCard.flavorText);
+  for (const ability of apiCard.abilities ?? []) parts.push(`${ability.name}. ${ability.text ?? ''}`);
+  for (const attack of apiCard.attacks ?? []) parts.push(`${attack.name}. ${attack.text ?? ''}`);
+  for (const rule of apiCard.rules ?? []) parts.push(rule);
+  return parts.join(' ').trim() || null;
+}
+
+async function fetchPage(apiId, page) {
+  const url = `${API}?q=set.id:${encodeURIComponent(apiId)}&page=${page}&pageSize=250` +
+    '&select=id,name,number,rarity,supertype,subtypes,types,flavorText,abilities,attacks,rules,images,tcgplayer,cardmarket';
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`API respondeu ${res.status}`);
+  return res.json();
+}
+
+/** Busca todas as cartas do set na API e devolve um mapa numero -> dados. */
+async function fetchSet(apiId) {
+  const byNumber = {};
+  for (let page = 1; page <= 4; page += 1) {
+    const body = await fetchPage(apiId, page);
+    const items = body?.data ?? [];
+    for (const apiCard of items) {
+      const number = Number.parseInt(apiCard.number, 10);
+      if (!Number.isFinite(number)) continue;
+      byNumber[number] = {
+        name: apiCard.name,
+        rarity: RARITY_CODES[apiCard.rarity] ?? null,
+        rarityFull: apiCard.rarity ?? null,
+        supertype: apiCard.supertype ?? null,
+        subtypes: apiCard.subtypes ?? [],
+        type: apiCard.types?.[0] ?? null,
+        text: describe(apiCard),
+        image: apiCard.images?.small ?? null,
+        imageLarge: apiCard.images?.large ?? null,
+        usd: apiCard.tcgplayer?.prices ?? null,
+        eur: apiCard.cardmarket?.prices ?? null,
+      };
+    }
+    if (items.length < 250) break;
+  }
+  if (Object.keys(byNumber).length === 0) throw new Error('A API nao devolveu cartas para este set.');
+  return byNumber;
+}
+
+/**
+ * Aplica os dados extras sobre as cartas do checklist, no lugar.
+ * O checklist manda no numero e na existencia do slot; a API manda no resto.
+ */
+function apply(cards, byNumber, apiId) {
+  for (const card of cards) {
+    const extra = byNumber[card.number];
+    card.image ??= imageUrl(apiId, card.number, 'small');
+    card.imageLarge ??= imageUrl(apiId, card.number, 'large');
+    if (!extra) continue;
+
+    if (card.unresolved && extra.name) {
+      card.name = extra.name;
+      card.unresolved = false;
+    }
+    if (extra.rarity && card.unresolved !== true) card.rarity ??= extra.rarity;
+    if (extra.type) card.type = extra.type;
+    if (extra.supertype) card.supertype = extra.supertype;
+    if (extra.rarityFull) card.rarityFull = extra.rarityFull;
+    card.subtypes = extra.subtypes;
+    card.text = extra.text;
+    card.usd = extra.usd;
+    card.eur = extra.eur;
+    if (extra.image) card.image = extra.image;
+    if (extra.imageLarge) card.imageLarge = extra.imageLarge;
+  }
+}
+
+/**
+ * Completa `set.cards`. Usa o cache quando existe; se nao houver internet o app
+ * segue funcionando com o checklist local e as imagens diretas.
+ *
+ * @returns {Promise<{source: 'cache'|'network'|'offline', error?: Error}>}
+ */
+async function enrich(set, { force = false } = {}) {
+  const apiId = set.apiId;
+  if (!force) {
+    const cached = readCache(set.id);
+    if (cached) {
+      apply(set.cards, cached.byNumber, apiId);
+      return { source: 'cache' };
+    }
+  }
+  try {
+    const byNumber = await fetchSet(apiId);
+    writeCache(set.id, byNumber);
+    apply(set.cards, byNumber, apiId);
+    return { source: 'network' };
+  } catch (error) {
+    apply(set.cards, {}, apiId);
+    return { source: 'offline', error };
+  }
+}
+
+/* ===== js/prices.js ===== */
+/**
+ * Precos das cartas.
+ *
+ * Preferencia: data/prices-liga.json, gerado na maquina do usuario por
+ * scripts/fetch-liga-prices.mjs (o Liga Pokemon nao tem API publica e bloqueia
+ * chamadas diretas do navegador por CORS, entao a coleta roda fora do app).
+ * Sem esse arquivo, cai para o preco de mercado do TCGplayer que vem junto com
+ * os dados da API, convertido para real e marcado como estimado.
+ */
+
+
+
+const LIGA_BASE = 'https://www.ligapokemon.com.br/?view=cards/card&card=';
+
+let ligaPrices = null;
+
+/** Carrega o arquivo local de precos, se ele existir. */
+async function loadLigaPrices() {
+  try {
+    ligaPrices = await loadJson('data/prices-liga.json');
+    return ligaPrices;
+  } catch {
+    ligaPrices = null; // arquivo ausente e o caso normal: caimos na estimativa
+    return null;
+  }
+}
+
+function ligaGeneratedAt() {
+  return ligaPrices?.generatedAt ?? null;
+}
+
+/** Link para a pagina da carta no Liga Pokemon. */
+function ligaUrl(card, set) {
+  const fromFile = ligaPrices?.sets?.[set.id]?.[card.number]?.url;
+  if (fromFile) return fromFile;
+  return LIGA_BASE + encodeURIComponent(`${card.name} (${set.code})`);
+}
+
+/** Chave de preco do TCGplayer correspondente a variante do binder. */
+function tcgKeyFor(card, variant) {
+  if (variant === 'r') return ['reverseHolofoil'];
+  if (variant === 'f') return ['holofoil', 'normal', 'reverseHolofoil'];
+  return ['normal', 'holofoil'];
+}
+
+function tcgMarket(card, variant) {
+  if (!card.usd) return null;
+  for (const key of tcgKeyFor(card, variant)) {
+    const bucket = card.usd[key];
+    const value = bucket?.market ?? bucket?.mid ?? bucket?.low;
+    if (typeof value === 'number' && value > 0) return value;
+  }
+  return null;
+}
+
+/**
+ * Preco de uma variante da carta.
+ * @returns {{value: number, currency: 'BRL', source: 'liga'|'estimado'}|null}
+ */
+function priceOf(card, set, variant) {
+  const liga = ligaPrices?.sets?.[set.id]?.[card.number];
+  const fromLiga = liga?.[variant] ?? (variant === 'f' ? liga?.n : null);
+  if (typeof fromLiga === 'number' && fromLiga > 0) {
+    return { value: fromLiga, currency: 'BRL', source: 'liga' };
+  }
+  const usd = tcgMarket(card, variant);
+  if (usd == null) return null;
+  return { value: usd * (getSettings().usdRate || 0), currency: 'BRL', source: 'estimado' };
+}
+
+/** Preco de referencia da carta: o da variante mais barata disponivel. */
+function basePrice(card, set, variants) {
+  const found = variants.map((v) => priceOf(card, set, v.key)).filter(Boolean);
+  if (found.length === 0) return null;
+  return found.reduce((a, b) => (a.value <= b.value ? a : b));
+}
+
+const formatBRL = (value) =>
+  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/* ===== js/print.js ===== */
+/**
+ * Gera as folhas de impressao 3x3 com as cartas que faltam.
+ *
+ * Cada slot tem o tamanho real de uma carta (63x88 mm), entao a folha impressa
+ * pode ser recortada e colocada nos bolsos vazios do binder. A ordem segue a do
+ * checklist: primeiro as cartas numeradas, depois os reverse holo.
+ * A "exportacao para PDF" e a caixa de impressao do navegador com a opcao
+ * "Salvar como PDF" -- sem depender de biblioteca externa.
+ */
+
+
+
+
+const PER_PAGE = 9;
+
+const el = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+};
+
+/**
+ * Monta a lista de slots que serao impressos.
+ * @param {object[]} cards cartas ja filtradas
+ */
+function collectSlots(cards, set, options) {
+  const base = [];
+  const reverse = [];
+
+  for (const card of cards) {
+    if (card.secret && !options.secrets) continue;
+    for (const variant of variantsOf(card)) {
+      if (qty(set.id, card.number, variant.key) > 0) continue;
+      if (variant.key === 'r') {
+        if (options.reverse) reverse.push({ card, variant });
+      } else {
+        base.push({ card, variant });
+      }
+    }
+  }
+
+  const byNumber = (a, b) => a.card.number - b.card.number;
+  return [...base.sort(byNumber), ...reverse.sort(byNumber)];
+}
+
+function buildSlot(slot, set, options) {
+  const { card, variant } = slot;
+  const node = el('div', 'slot');
+
+  if (options.images && card.image) {
+    const img = el('img');
+    img.src = card.image;
+    img.alt = '';
+    img.loading = 'eager';
+    node.append(img);
+  }
+
+  const body = el('div', 'slot-text');
+  const label = variant.key === 'r' ? `${card.display} RH` : card.display;
+  body.append(el('div', 'slot-num', `${label} / ${set.printedTotal}`));
+  body.append(el('div', 'slot-name', card.name));
+
+  const meta = [card.rarityLabel ?? card.rarity, card.type && typeLabel(card.type)]
+    .filter(Boolean).join(' · ');
+  body.append(el('div', 'slot-meta', variant.key === 'r' ? `${meta} · Reverse Holo` : meta));
+
+  const foot = el('div', 'slot-foot');
+  foot.append(el('span', null, set.code));
+  if (options.prices) {
+    const price = basePrice(card, set, [variant]);
+    foot.append(el('span', 'slot-price', price ? formatBRL(price.value) : '—'));
+  }
+  body.append(foot);
+
+  node.append(body);
+  return node;
+}
+
+/** Desenha as folhas dentro de `root` e devolve quantas paginas foram geradas. */
+function renderSheets(root, slots, set, options) {
+  root.replaceChildren();
+  const pages = Math.ceil(slots.length / PER_PAGE);
+
+  for (let page = 0; page < pages; page += 1) {
+    const wrapper = el('section');
+    const head = el('div', 'sheet-head');
+    head.append(el('span', null, `${set.series} — ${set.name} (${set.code})`));
+    head.append(el('span', null, `Faltando — página ${page + 1} de ${pages}`));
+    wrapper.append(head);
+
+    const sheet = el('div', 'sheet');
+    const slice = slots.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+    for (const slot of slice) sheet.append(buildSlot(slot, set, options));
+    for (let i = slice.length; i < PER_PAGE; i += 1) sheet.append(el('div', 'slot blank'));
+
+    wrapper.append(sheet);
+    root.append(wrapper);
+  }
+  return pages;
+}
+
+/**
+ * Espera as imagens da area de impressao carregarem, para que a caixa de
+ * impressao nao abra com slots em branco. Segue adiante se alguma falhar.
+ */
+function waitForImages(root, timeout = 12000) {
+  const images = [...root.querySelectorAll('img')].filter((img) => !img.complete);
+  if (images.length === 0) return Promise.resolve();
+  const loaded = Promise.all(
+    images.map((img) => new Promise((done) => {
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    })),
+  );
+  return Promise.race([loaded, new Promise((done) => setTimeout(done, timeout))]);
+}
+
+/* ===== js/app.js ===== */
+/**
+ * Binder — organizador de cartas Pokemon.
+ *
+ * O app e estatico: o checklist vem de data/*.json, os dados extras e as
+ * imagens vem da API oficial (buscadas pelo navegador e guardadas em cache) e a
+ * colecao fica em localStorage.
+ */
+
+
+
+
+
+
+
+const $ = (id) => document.getElementById(id);
+
+const ui = {
+  seriesSelect: $('series-select'),
+  setSelect: $('set-select'),
+  search: $('search'),
+  searchClear: $('search-clear'),
+  alphabet: $('alphabet'),
+  filterOwned: $('filter-owned'),
+  filterRarity: $('filter-rarity'),
+  filterType: $('filter-type'),
+  sort: $('sort'),
+  splitReverse: $('split-reverse'),
+  grid: $('grid'),
+  empty: $('empty'),
+  resultCount: $('result-count'),
+  status: $('status'),
+  printRoot: $('print-root'),
+};
+
+const state = {
+  catalog: null,
+  set: null,
+  letter: null,
+  query: '',
+};
+
+const normalize = (value) => (value ?? '')
+  .toString()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
+
+/* ---------------------------------------------------------------- dados --- */
+
+async function loadCatalog() {
+  state.catalog = await loadJson('data/sets.json');
+
+  ui.seriesSelect.replaceChildren(...state.catalog.series.map((s) => new Option(s.name, s.id)));
+  ui.seriesSelect.addEventListener('change', () => { fillSetSelect(); loadSelectedSet(); });
+  ui.setSelect.addEventListener('change', loadSelectedSet);
+  fillSetSelect();
+}
+
+function fillSetSelect() {
+  const series = state.catalog.series.find((s) => s.id === ui.seriesSelect.value);
+  ui.setSelect.replaceChildren(
+    ...(series?.sets ?? []).map((s) => new Option(`${s.name} (${s.code})`, s.id)),
+  );
+}
+
+function currentSetMeta() {
+  const series = state.catalog.series.find((s) => s.id === ui.seriesSelect.value);
+  return series?.sets.find((s) => s.id === ui.setSelect.value) ?? series?.sets[0];
+}
+
+async function loadSelectedSet() {
+  const meta = currentSetMeta();
+  if (!meta) return;
+
+  status('Carregando checklist…');
+  state.set = await loadJson(meta.data);
+
+  fillFacetFilters();
+  render();
+
+  status('Buscando imagens e dados das cartas…');
+  const [result] = await Promise.all([enrich(state.set), loadLigaPrices()]);
+
+  fillFacetFilters();
+  render();
+  reportSource(result);
+}
+
+function reportSource(result) {
+  const liga = ligaGeneratedAt();
+  const priceNote = liga
+    ? `Preços do Liga Pokémon de ${new Date(liga).toLocaleDateString('pt-BR')}.`
+    : 'Preços estimados (sem data/prices-liga.json).';
+
+  if (result.source === 'offline') {
+    status(`Sem conexão com a API — usando o checklist local. ${priceNote}`);
+  } else {
+    const origin = result.source === 'cache' ? 'cache local' : 'API oficial';
+    status(`${state.set.cards.length} cartas · dados do ${origin}. ${priceNote}`);
+  }
+}
+
+function status(text) {
+  ui.status.textContent = text;
+}
+
+/* --------------------------------------------------------------- filtros --- */
+
+function fillFacetFilters() {
+  const rarities = [...new Set(state.set.cards.map((c) => c.rarity).filter(Boolean))]
+    .sort((a, b) => RARITY_ORDER.indexOf(a) - RARITY_ORDER.indexOf(b));
+  const labelFor = (code) =>
+    state.set.cards.find((c) => c.rarity === code)?.rarityLabel ?? code;
+
+  const keepRarity = ui.filterRarity.value;
+  ui.filterRarity.replaceChildren(
+    new Option('Todas as raridades', 'all'),
+    ...rarities.map((r) => new Option(`${labelFor(r)} (${r})`, r)),
+  );
+  ui.filterRarity.value = rarities.includes(keepRarity) ? keepRarity : 'all';
+
+  const types = [...new Set(state.set.cards.map((c) => c.type).filter(Boolean))];
+  const keepType = ui.filterType.value;
+  ui.filterType.replaceChildren(
+    new Option('Todos os tipos', 'all'),
+    ...types.map((t) => new Option(typeLabel(t), t)),
+  );
+  ui.filterType.value = types.includes(keepType) ? keepType : 'all';
+}
+
+function buildAlphabet() {
+  const letters = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+  ui.alphabet.replaceChildren(
+    ...letters.map((letter) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = letter;
+      btn.addEventListener('click', () => {
+        state.letter = state.letter === letter ? null : letter;
+        render();
+      });
+      return btn;
+    }),
+  );
+}
+
+function matchesSearch(card) {
+  if (!state.query) return true;
+  const haystack = [
+    card.name,
+    card.display,
+    `${card.display}/${state.set.printedTotal}`,
+    String(card.number),
+    card.rarity,
+    card.rarityLabel,
+    card.rarityFull,
+    typeLabel(card.type),
+    card.type,
+    card.supertype,
+    (card.subtypes ?? []).join(' '),
+    card.text,
+  ];
+  return normalize(haystack.join(' ')).includes(state.query);
+}
+
+function matchesLetter(card) {
+  if (!state.letter) return true;
+  const first = normalize(card.name)[0] ?? '';
+  return state.letter === '#' ? !/[a-z]/.test(first) : normalize(state.letter) === first;
+}
+
+function matchesOwned(card) {
+  const mode = ui.filterOwned.value;
+  if (mode === 'all') return true;
+  const has = store.hasCard(state.set.id, card.number);
+  if (mode === 'owned') return has;
+  if (mode === 'foil') return store.hasFoil(state.set.id, card.number);
+  if (mode === 'incomplete') {
+    // algum espaco do binder ainda vazio (ex.: tenho a normal mas nao a reverse)
+    return store.variantsOf(card).some((v) => store.qty(state.set.id, card.number, v.key) === 0);
+  }
+  return !has; // "missing": nenhuma copia
+}
+
+function visibleCards() {
+  const rarity = ui.filterRarity.value;
+  const type = ui.filterType.value;
+
+  const cards = state.set.cards.filter((card) =>
+    (rarity === 'all' || card.rarity === rarity)
+    && (type === 'all' || card.type === type)
+    && matchesLetter(card)
+    && matchesOwned(card)
+    && matchesSearch(card));
+
+  const priceOfCard = (card) =>
+    basePrice(card, state.set, store.variantsOf(card))?.value ?? -1;
+
+  const sorters = {
+    number: (a, b) => a.number - b.number,
+    name: (a, b) => a.name.localeCompare(b.name, 'pt-BR') || a.number - b.number,
+    rarity: (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity) || a.number - b.number,
+    price: (a, b) => priceOfCard(b) - priceOfCard(a),
+  };
+  return cards.sort(sorters[ui.sort.value] ?? sorters.number);
+}
+
+/* ------------------------------------------------------------ renderizacao --- */
+
+function stepper(card, variant, onChanged) {
+  const setId = state.set.id;
+  const row = document.createElement('div');
+  row.className = 'variant';
+
+  const label = document.createElement('span');
+  label.className = 'variant-label';
+  label.textContent = variant.label;
+
+  const box = document.createElement('div');
+  box.className = 'stepper';
+
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.textContent = '−';
+  minus.title = `Tirar uma cópia ${variant.label}`;
+
+  const count = document.createElement('span');
+  count.className = 'qty';
+
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.textContent = '+';
+  plus.title = `Adicionar uma cópia ${variant.label}`;
+
+  const paint = () => {
+    const value = store.qty(setId, card.number, variant.key);
+    count.textContent = value;
+    row.classList.toggle('zero', value === 0);
+    row.classList.toggle('has', value > 0);
+  };
+
+  const change = (delta) => {
+    store.bump(setId, card.number, variant.key, delta);
+    paint();
+    onChanged?.();
+  };
+  minus.addEventListener('click', () => change(-1));
+  plus.addEventListener('click', () => change(1));
+  paint();
+
+  box.append(minus, count, plus);
+  row.append(label, box);
+  return row;
+}
+
+/**
+ * Um tile do grid.
+ * @param {object[]} variants variantes mostradas neste tile (uma so quando o
+ *   modo "reverse separado" esta ligado)
+ */
+function cardTile(card, variants) {
+  const setId = state.set.id;
+  const isReverseTile = variants.length === 1 && variants[0].key === 'r';
+
+  const tile = document.createElement('article');
+  tile.className = 'card';
+
+  const art = document.createElement('div');
+  art.className = 'card-art';
+
+  if (card.image) {
+    const img = document.createElement('img');
+    img.src = card.image;
+    img.alt = card.name;
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.addEventListener('error', () => {
+      img.remove();
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.textContent = `${card.display} · ${card.name}`;
+      art.append(ph);
+    }, { once: true });
+    art.append(img);
+  }
+
+  const badges = document.createElement('div');
+  badges.className = 'badges';
+  art.append(badges);
+
+  /** Reaplica tudo que depende das quantidades: opacidade, brilho foil e selos. */
+  const paintTile = () => {
+    const owned = variants.reduce((sum, v) => sum + store.qty(setId, card.number, v.key), 0);
+    const foil = variants.some((v) => v.foil && store.qty(setId, card.number, v.key) > 0);
+
+    tile.classList.toggle('missing', owned === 0);
+    tile.classList.toggle('foil', foil);
+
+    const tags = [];
+    if (card.rarity) tags.push(['badge rarity', isReverseTile ? 'RH' : card.rarity]);
+    if (foil) tags.push(['badge foil-tag', 'FOIL']);
+    if (owned > 1) tags.push(['badge count', `×${owned}`]);
+
+    badges.replaceChildren(...tags.map(([className, text]) => {
+      const node = document.createElement('span');
+      node.className = className;
+      node.textContent = text;
+      return node;
+    }));
+  };
+
+  const info = document.createElement('div');
+  info.className = 'card-info';
+  const num = document.createElement('span');
+  num.className = 'card-num';
+  num.textContent = isReverseTile ? `${card.display} RH` : card.display;
+  const name = document.createElement('span');
+  name.className = 'card-name';
+  name.textContent = card.name;
+  name.title = card.text ? `${card.name} — ${card.text}` : card.name;
+  info.append(num, name);
+
+  const price = basePrice(card, state.set, variants);
+  if (price) {
+    const tag = document.createElement('span');
+    tag.className = `card-price${price.source === 'estimado' ? ' estimated' : ''}`;
+    tag.textContent = formatBRL(price.value);
+    tag.title = price.source === 'liga'
+      ? 'Preço do Liga Pokémon'
+      : 'Estimativa a partir do preço de mercado internacional';
+    info.append(tag);
+  }
+
+  const box = document.createElement('div');
+  box.className = 'variants';
+  for (const variant of variants) box.append(stepper(card, variant, paintTile));
+
+  const links = document.createElement('div');
+  links.className = 'card-links';
+  const liga = document.createElement('a');
+  liga.href = ligaUrl(card, state.set);
+  liga.target = '_blank';
+  liga.rel = 'noopener';
+  liga.textContent = 'Liga Pokémon';
+  links.append(liga);
+
+  paintTile();
+  tile.append(art, info, box, links);
+  return tile;
+}
+
+/** Atualiza o contador de progresso do set inteiro. */
+function paintProgress() {
+  const stats = store.progress(state.set.cards, state.set.id);
+  const { slots, filled, copies } = stats;
+  $('progress-have').textContent = filled;
+  $('progress-total').textContent = `/${slots}`;
+  $('progress-fill').style.width = `${slots ? (filled / slots) * 100 : 0}%`;
+  $('progress-label').textContent =
+    `${(slots ? filled / slots * 100 : 0).toFixed(1)}% do master set · `
+    + `${copies} ${copies === 1 ? 'carta' : 'cartas'} na coleção`;
+  return stats;
+}
+
+function render() {
+  if (!state.set) return;
+
+  for (const btn of ui.alphabet.children) btn.classList.toggle('on', btn.textContent === state.letter);
+
+  const cards = visibleCards();
+  const split = ui.splitReverse.checked;
+
+  const tiles = [];
+  for (const card of cards) {
+    const variants = store.variantsOf(card);
+    if (!split) { tiles.push(cardTile(card, variants)); continue; }
+    for (const variant of variants) tiles.push(cardTile(card, [variant]));
+  }
+
+  ui.grid.replaceChildren(...tiles);
+  ui.empty.hidden = tiles.length > 0;
+
+  const { slots } = paintProgress();
+  ui.resultCount.textContent =
+    `${tiles.length} ${tiles.length === 1 ? 'carta' : 'cartas'} na tela · `
+    + `${state.set.cards.length} numeradas + ${state.set.reverseHoloCount} reverse = ${slots} espaços no binder`;
+
+  const links = state.set.links ?? {};
+  if (links.pkmncards) $('link-pkmncards').href = links.pkmncards;
+  if (links.watchtower) $('link-watchtower').href = links.watchtower;
+  if (links.ligapokemon) $('link-liga').href = links.ligapokemon;
+}
+
+/* ------------------------------------------------------------- impressao --- */
+
+function printOptions() {
+  return {
+    images: $('print-images').checked,
+    reverse: $('print-reverse').checked,
+    secrets: $('print-secrets').checked,
+    prices: $('print-prices').checked,
+    filtered: $('print-filtered').checked,
+  };
+}
+
+function updatePrintSummary() {
+  const options = printOptions();
+  const source = options.filtered ? visibleCards() : state.set.cards;
+  const slots = collectSlots(source, state.set, options);
+  $('print-summary').textContent = slots.length === 0
+    ? 'Nada faltando com essas opções — nenhuma página seria gerada.'
+    : `${slots.length} espaços para imprimir em ${Math.ceil(slots.length / 9)} página(s) A4.`;
+  $('print-go').disabled = slots.length === 0;
+}
+
+async function doPrint() {
+  const options = printOptions();
+  const source = options.filtered ? visibleCards() : state.set.cards;
+  const slots = collectSlots(source, state.set, options);
+  if (slots.length === 0) return;
+
+  status('Montando as folhas…');
+  const pages = renderSheets(ui.printRoot, slots, state.set, options);
+  if (options.images) await waitForImages(ui.printRoot);
+  status(`${pages} página(s) prontas — use "Salvar como PDF" na caixa de impressão.`);
+  window.print();
+}
+
+/* ---------------------------------------------------------------- backup --- */
+
+function download(filename, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------------------------------------------------------- eventos --- */
+
+function wireEvents() {
+  let searchTimer;
+  ui.search.addEventListener('input', () => {
+    ui.searchClear.hidden = ui.search.value === '';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.query = normalize(ui.search.value.trim()); render(); }, 120);
+  });
+  ui.searchClear.addEventListener('click', () => {
+    ui.search.value = '';
+    ui.searchClear.hidden = true;
+    state.query = '';
+    render();
+  });
+
+  for (const control of [ui.filterOwned, ui.filterRarity, ui.filterType, ui.sort, ui.splitReverse]) {
+    control.addEventListener('change', render);
+  }
+
+  $('btn-print').addEventListener('click', () => {
+    updatePrintSummary();
+    $('print-dialog').showModal();
+  });
+  for (const id of ['print-images', 'print-reverse', 'print-secrets', 'print-prices', 'print-filtered']) {
+    $(id).addEventListener('change', updatePrintSummary);
+  }
+  $('print-dialog').addEventListener('close', (event) => {
+    if (event.target.returnValue === 'print') doPrint();
+  });
+
+  $('btn-prices').addEventListener('click', () => {
+    $('usd-rate').value = store.getSettings().usdRate;
+    $('prices-dialog').showModal();
+  });
+  $('prices-dialog').addEventListener('close', async (event) => {
+    const rate = Number.parseFloat($('usd-rate').value);
+    if (Number.isFinite(rate) && rate > 0) store.updateSettings({ usdRate: rate });
+    if (event.target.returnValue === 'reload') {
+      status('Recarregando preços…');
+      clearCache(state.set.id);
+      const [result] = await Promise.all([enrich(state.set, { force: true }), loadLigaPrices()]);
+      reportSource(result);
+    }
+    render();
+  });
+
+  $('btn-export').addEventListener('click', () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    download(`binder-colecao-${stamp}.json`, store.exportBackup());
+  });
+
+  $('btn-import').addEventListener('click', () => $('import-file').click());
+  $('import-file').addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      store.importBackup(await file.text());
+      status('Backup importado.');
+    } catch (err) {
+      status(`Falha ao importar: ${err.message}`);
+    }
+    event.target.value = '';
+  });
+
+  $('btn-reset').addEventListener('click', () => {
+    const name = state.set?.name ?? 'esta expansão';
+    if (confirm(`Zerar todas as quantidades de ${name}? Isso não pode ser desfeito.`)) {
+      store.resetSet(state.set.id);
+      status(`${name} zerada.`);
+    }
+  });
+
+  // Mudancas na colecao so repintam o progresso; o tile cuida de si mesmo.
+  // A excecao e quando um filtro de posse esta ativo: a carta pode ter saido
+  // ou entrado na selecao, entao vale redesenhar a grade.
+  store.onChange(() => {
+    if (!state.set) return;
+    if (ui.filterOwned.value === 'all') paintProgress();
+    else render();
+  });
+}
+
+buildAlphabet();
+wireEvents();
+loadCatalog().then(loadSelectedSet).catch((err) => {
+  status(`Erro ao carregar: ${err.message}`);
+  console.error(err);
+});
+
+})();
+</script>
+</body>
+</html>

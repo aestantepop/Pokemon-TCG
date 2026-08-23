@@ -7,6 +7,10 @@
   "scripts": {
     "start": "python3 -m http.server 8080",
     "build:data": "node scripts/build-set-data.mjs",
+    "build:html": "node scripts/build-single-file.mjs",
     "prices": "node scripts/fetch-liga-prices.mjs sv08"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.1"
   }
 }

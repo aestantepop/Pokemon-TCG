@@ -11,6 +11,7 @@ import { enrich, clearCache } from './enrich.js';
 import { loadLigaPrices, ligaGeneratedAt, ligaUrl, priceOf, basePrice, formatBRL } from './prices.js';
 import { collectSlots, renderSheets, waitForImages } from './print.js';
 import { RARITY_ORDER, typeLabel } from './labels.js';
+import { loadJson } from './load-json.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -48,8 +49,7 @@ const normalize = (value) => (value ?? '')
 /* ---------------------------------------------------------------- dados --- */
 
 async function loadCatalog() {
-  const res = await fetch('data/sets.json');
-  state.catalog = await res.json();
+  state.catalog = await loadJson('data/sets.json');
 
   ui.seriesSelect.replaceChildren(...state.catalog.series.map((s) => new Option(s.name, s.id)));
   ui.seriesSelect.addEventListener('change', () => { fillSetSelect(); loadSelectedSet(); });
@@ -74,8 +74,7 @@ async function loadSelectedSet() {
   if (!meta) return;
 
   status('Carregando checklist…');
-  const res = await fetch(meta.data);
-  state.set = await res.json();
+  state.set = await loadJson(meta.data);
 
   fillFacetFilters();
   render();
@@ -359,7 +358,8 @@ function paintProgress() {
   $('progress-total').textContent = `/${slots}`;
   $('progress-fill').style.width = `${slots ? (filled / slots) * 100 : 0}%`;
   $('progress-label').textContent =
-    `${(slots ? filled / slots * 100 : 0).toFixed(1)}% do master set · ${copies} cartas na coleção`;
+    `${(slots ? filled / slots * 100 : 0).toFixed(1)}% do master set · `
+    + `${copies} ${copies === 1 ? 'carta' : 'cartas'} na coleção`;
   return stats;
 }
 
