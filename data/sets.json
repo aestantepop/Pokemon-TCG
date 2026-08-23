@@ -1,0 +1,18 @@
+{
+  "series": [
+    {
+      "id": "sv",
+      "name": "Scarlet & Violet",
+      "sets": [
+        {
+          "id": "sv08",
+          "code": "SSP",
+          "name": "Surging Sparks",
+          "releaseDate": "2024-11-08",
+          "total": 252,
+          "data": "data/sv08-surging-sparks.json"
+        }
+      ]
+    }
+  ]
+}

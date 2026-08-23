@@ -1,0 +1,12 @@
+{
+  "name": "binder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Organizador de cartas Pokémon por lançamento e expansão",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "build:data": "node scripts/build-set-data.mjs",
+    "prices": "node scripts/fetch-liga-prices.mjs sv08"
+  }
+}

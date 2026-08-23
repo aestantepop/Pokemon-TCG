@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binder — Organizador de cartas Pokémon</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗂️</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◈</span>
+    <div>
+      <h1>Binder</h1>
+      <p>Organizador de cartas Pokémon</p>
+    </div>
+  </div>
+
+  <div class="picker">
+    <label>
+      <span>Lançamento</span>
+      <select id="series-select"></select>
+    </label>
+    <label>
+      <span>Expansão</span>
+      <select id="set-select"></select>
+    </label>
+  </div>
+
+  <div class="progress" id="progress">
+    <div class="progress-numbers"><strong id="progress-have">0</strong><span id="progress-total">/0</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">carregando…</div>
+  </div>
+</header>
+
+<nav class="toolbar">
+  <div class="search-wrap">
+    <input id="search" type="search" autocomplete="off"
+           placeholder="Buscar por nome, número, tipo, raridade ou texto da carta…">
+    <button type="button" id="search-clear" class="icon-btn" title="Limpar busca" hidden>×</button>
+  </div>
+
+  <div class="alphabet" id="alphabet"></div>
+
+  <div class="filters">
+    <select id="filter-owned">
+      <option value="all">Todas</option>
+      <option value="missing">Só as que faltam</option>
+      <option value="incomplete">Binder incompleto (falta normal ou reverse)</option>
+      <option value="owned">Só as que tenho</option>
+      <option value="foil">Só as foil que tenho</option>
+    </select>
+    <select id="filter-rarity"><option value="all">Todas as raridades</option></select>
+    <select id="filter-type"><option value="all">Todos os tipos</option></select>
+    <select id="sort">
+      <option value="number">Ordem do set</option>
+      <option value="name">Nome (A–Z)</option>
+      <option value="rarity">Raridade</option>
+      <option value="price">Preço (maior primeiro)</option>
+    </select>
+    <label class="switch">
+      <input type="checkbox" id="split-reverse">
+      <span>Reverse holo como carta separada</span>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button type="button" id="btn-print" class="primary">Exportar PDF do binder</button>
+    <details class="menu">
+      <summary>Mais</summary>
+      <div class="menu-body">
+        <button type="button" id="btn-prices">Atualizar preços</button>
+        <button type="button" id="btn-export">Salvar backup da coleção</button>
+        <button type="button" id="btn-import">Importar backup</button>
+        <input type="file" id="import-file" accept="application/json" hidden>
+        <button type="button" id="btn-reset" class="danger">Zerar esta expansão</button>
+      </div>
+    </details>
+  </div>
+</nav>
+
+<main>
+  <p class="result-count" id="result-count"></p>
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty" hidden>Nenhuma carta encontrada com esses filtros.</p>
+</main>
+
+<footer class="statusbar">
+  <span id="status">…</span>
+  <span class="spacer"></span>
+  <a id="link-pkmncards" href="https://pkmncards.com/set/surging-sparks/" target="_blank" rel="noopener">pkmncards</a>
+  <a id="link-watchtower" href="https://tcgwatchtower.com/pokemon/sets/scarlet-violet/surging-sparks/cards" target="_blank" rel="noopener">TCG Watchtower</a>
+  <a id="link-liga" href="https://www.ligapokemon.com.br" target="_blank" rel="noopener">Liga Pokémon</a>
+</footer>
+
+<!-- Diálogo de impressão -->
+<dialog id="print-dialog">
+  <form method="dialog" class="dialog-body">
+    <h2>Exportar PDF para o binder</h2>
+    <p class="hint">Gera folhas 3×3 no tamanho real da carta (63×88&nbsp;mm) com as cartas que faltam,
+       para imprimir e colocar nos bolsos vazios.</p>
+    <label class="row"><input type="checkbox" id="print-images" checked> Imprimir a imagem da carta</label>
+    <label class="row"><input type="checkbox" id="print-reverse"> Incluir os reverse holo que faltam</label>
+    <label class="row"><input type="checkbox" id="print-secrets" checked> Incluir as secretas (192–252)</label>
+    <label class="row"><input type="checkbox" id="print-prices" checked> Mostrar o preço na carta</label>
+    <label class="row"><input type="checkbox" id="print-filtered"> Usar os filtros/busca da tela</label>
+    <p class="hint" id="print-summary"></p>
+    <menu>
+      <button value="cancel" class="ghost">Cancelar</button>
+      <button value="print" id="print-go" class="primary">Gerar PDF</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- Diálogo de preços -->
+<dialog id="prices-dialog">
+  <form method="dialog" class="dialog-body">
+    <h2>Preços</h2>
+    <p class="hint">O Liga Pokémon não oferece API pública nem libera acesso direto do navegador (CORS),
+      então os preços dele entram por um arquivo gerado na sua máquina.</p>
+    <ol class="steps">
+      <li>Na pasta do projeto rode <code>node scripts/fetch-liga-prices.mjs sv08</code></li>
+      <li>Isso grava <code>data/prices-liga.json</code></li>
+      <li>Recarregue esta página — os preços aparecem em R$ com a marca <b>Liga</b></li>
+    </ol>
+    <p class="hint">Sem esse arquivo o app mostra o preço de mercado internacional convertido, marcado como
+      <b>estimado</b>. Cada carta tem link direto para a página dela no Liga.</p>
+    <label class="row">Cotação do dólar (R$)
+      <input type="number" id="usd-rate" step="0.01" min="0" class="small-input">
+    </label>
+    <menu>
+      <button value="cancel" class="ghost">Fechar</button>
+      <button value="reload" id="prices-reload" class="primary">Recarregar preços</button>
+    </menu>
+  </form>
+</dialog>
+
+<div id="print-root" class="print-root" aria-hidden="true"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
