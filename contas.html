@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contas do Mês — Organizador financeiro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>💰</text></svg>">
+<style>
+:root {
+  --bg: #0d1016;
+  --bg-raised: #151a23;
+  --bg-input: #1c222d;
+  --line: #262e3b;
+  --line-soft: #1e2530;
+  --text: #e8ecf3;
+  --text-dim: #93a0b4;
+  --text-faint: #64718a;
+  --accent: #4ade80;
+  --accent-ink: #062611;
+  --danger: #ff6b6b;
+  --warn: #ffc531;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 10px;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+button {
+  background: var(--bg-input);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--text-faint); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; border-color: transparent; color: var(--text-faint); padding: 4px 7px; }
+button.ghost:hover { color: var(--text); border-color: var(--line); }
+
+/* ---------- topo ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 14px 22px;
+  background: linear-gradient(180deg, #171d27, #10141c);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-mark { font-size: 26px; }
+.brand h1 { margin: 0; font-size: 19px; letter-spacing: -0.2px; }
+.brand p { margin: 0; font-size: 12px; color: var(--text-faint); }
+
+.mes-nav { display: flex; align-items: center; gap: 6px; }
+.mes-nav strong { min-width: 150px; text-align: center; font-size: 15px; }
+
+.saldo-topo { margin-left: auto; text-align: right; }
+.saldo-topo span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-faint); }
+.saldo-topo strong { font-size: 25px; letter-spacing: -0.5px; }
+.pos { color: var(--accent); }
+.neg { color: var(--danger); }
+
+/* ---------- layout ---------- */
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 18px;
+  padding: 18px 22px 40px;
+  align-items: start;
+}
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.card > h2 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card > h2 .conta-total { margin-left: auto; color: var(--text); font-size: 14px; letter-spacing: 0; text-transform: none; }
+
+/* ---------- kpis ---------- */
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+}
+.kpi span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-faint); }
+.kpi strong { display: block; font-size: 21px; margin-top: 4px; letter-spacing: -0.4px; }
+.kpi small { color: var(--text-faint); font-size: 11.5px; }
+
+/* ---------- listas ---------- */
+
+table.lista { width: 100%; border-collapse: collapse; }
+table.lista th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-faint);
+  font-weight: 500;
+  padding: 0 8px 7px;
+}
+table.lista td { padding: 7px 8px; border-top: 1px solid var(--line-soft); vertical-align: middle; }
+table.lista tr.paga td { opacity: 0.45; }
+table.lista tr.paga .nome { text-decoration: line-through; }
+.nome { font-weight: 500; }
+.sub { display: block; font-size: 11.5px; color: var(--text-faint); }
+td.val { text-align: right; white-space: nowrap; }
+td.val input { width: 116px; text-align: right; padding: 5px 8px; }
+td.acoes { text-align: right; white-space: nowrap; }
+.tag {
+  display: inline-block;
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  color: var(--text-faint);
+  margin-left: 6px;
+}
+.vazio { color: var(--text-faint); font-size: 13.5px; padding: 6px 8px; }
+
+.add-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.add-form input[type="text"] { flex: 1 1 150px; min-width: 120px; }
+.add-form input[type="number"] { width: 108px; }
+.add-form select { width: auto; }
+
+/* ---------- projeção ---------- */
+
+.proj { width: 100%; border-collapse: collapse; }
+.proj th, .proj td { padding: 6px 8px; font-size: 13.5px; border-top: 1px solid var(--line-soft); }
+.proj th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-faint); font-weight: 500; border: 0; }
+.proj td:not(:first-child) { text-align: right; white-space: nowrap; }
+.proj tr.atual { background: #1b2230; }
+.proj td.mes { color: var(--text-dim); }
+.barra { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 3px; }
+.barra i { display: block; height: 100%; background: var(--accent); }
+.barra.ruim i { background: var(--danger); }
+
+/* ---------- dicas ---------- */
+
+.dica {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+  font-size: 14px;
+}
+.dica:first-of-type { border-top: 0; }
+.dica .ico { font-size: 16px; line-height: 1.3; }
+.dica p { margin: 0; color: var(--text-dim); }
+.dica p b { color: var(--text); font-weight: 600; }
+
+/* ---------- chat ---------- */
+
+.chat {
+  position: sticky;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 36px);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.chat header { padding: 13px 15px; border-bottom: 1px solid var(--line); }
+.chat header h2 { margin: 0; font-size: 14px; }
+.chat header p { margin: 2px 0 0; font-size: 11.5px; color: var(--text-faint); }
+.log { flex: 1; overflow-y: auto; padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 92%; padding: 9px 12px; border-radius: 12px; font-size: 14px; white-space: pre-wrap; }
+.msg.eu { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 3px; }
+.msg.app { align-self: flex-start; background: var(--bg-input); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
+.msg.app.erro { border-color: var(--danger); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 15px 10px; }
+.chips button { font-size: 12px; padding: 4px 9px; border-radius: 20px; color: var(--text-dim); }
+.chat form { display: flex; gap: 8px; padding: 12px 15px; border-top: 1px solid var(--line); }
+.chat form input { flex: 1; }
+
+footer.rodape { padding: 0 22px 30px; color: var(--text-faint); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  .chat { position: static; height: 460px; }
+  .saldo-topo { margin-left: 0; text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">💰</span>
+    <div>
+      <h1>Contas do Mês</h1>
+      <p>O que entra, o que sai e o que sobra</p>
+    </div>
+  </div>
+
+  <div class="mes-nav">
+    <button type="button" id="mes-ant" title="Mês anterior">‹</button>
+    <strong id="mes-label">—</strong>
+    <button type="button" id="mes-prox" title="Próximo mês">›</button>
+    <button type="button" id="mes-hoje" class="ghost">hoje</button>
+  </div>
+
+  <div class="saldo-topo">
+    <span id="saldo-titulo">Sobra no mês</span>
+    <strong id="saldo-valor">R$ 0,00</strong>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="kpis">
+      <div class="kpi"><span>Entradas</span><strong id="kpi-entradas" class="pos">R$ 0,00</strong><small id="kpi-entradas-sub">&nbsp;</small></div>
+      <div class="kpi"><span>Contas do mês</span><strong id="kpi-contas">R$ 0,00</strong><small id="kpi-contas-sub">&nbsp;</small></div>
+      <div class="kpi"><span>Ainda a pagar</span><strong id="kpi-falta">R$ 0,00</strong><small id="kpi-falta-sub">&nbsp;</small></div>
+      <div class="kpi"><span>Guardado</span><strong id="kpi-guardado">R$ 0,00</strong><small id="kpi-guardado-sub">&nbsp;</small></div>
+    </div>
+
+    <div class="card">
+      <h2>Entradas <span class="conta-total" id="total-entradas"></span></h2>
+      <table class="lista">
+        <thead><tr><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+        <tbody id="tb-entradas"></tbody>
+      </table>
+      <form class="add-form" id="form-entrada">
+        <input type="text" id="e-nome" placeholder="Salário, freela, aluguel recebido…" required>
+        <input type="number" id="e-valor" placeholder="0,00" step="0.01" min="0" required>
+        <select id="e-tipo">
+          <option value="fixa">Todo mês</option>
+          <option value="unica">Só neste mês</option>
+        </select>
+        <button type="submit" class="primary">Adicionar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Contas e dívidas <span class="conta-total" id="total-contas"></span></h2>
+      <table class="lista">
+        <thead><tr><th>Descrição</th><th style="text-align:right">Valor no mês</th><th></th></tr></thead>
+        <tbody id="tb-contas"></tbody>
+      </table>
+      <form class="add-form" id="form-conta">
+        <input type="text" id="c-nome" placeholder="Cartão, luz, empréstimo…" required>
+        <input type="number" id="c-valor" placeholder="0,00" step="0.01" min="0" required>
+        <input type="number" id="c-parcelas" placeholder="vezes" min="1" max="600" title="Quantas vezes ainda vai aparecer. Vazio = todo mês, sem fim.">
+        <button type="submit" class="primary">Adicionar</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Próximos meses</h2>
+      <table class="proj">
+        <thead><tr><th>Mês</th><th>Entradas</th><th>Contas</th><th>Sobra</th><th>Guardado no fim</th></tr></thead>
+        <tbody id="tb-proj"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Dicas pra você</h2>
+      <div id="dicas"></div>
+    </div>
+  </section>
+
+  <aside class="chat">
+    <header>
+      <h2>Escreve que eu anoto</h2>
+      <p>Ex.: “cartão nubank 450 em 6x”, “salário 3200”, “gastei mais 120 no cartão”</p>
+    </header>
+    <div class="log" id="log"></div>
+    <div class="chips" id="chips"></div>
+    <form id="form-chat" autocomplete="off">
+      <input type="text" id="chat-input" placeholder="Escreve aqui…" autocomplete="off">
+      <button type="submit" class="primary">Enviar</button>
+    </form>
+  </aside>
+</main>
+
+<footer class="rodape">
+  <span>Tudo fica salvo só neste navegador.</span>
+  <button type="button" id="btn-backup" class="ghost">Baixar backup</button>
+  <button type="button" id="btn-restaurar" class="ghost">Restaurar backup</button>
+  <button type="button" id="btn-zerar" class="ghost">Apagar tudo</button>
+  <input type="file" id="file-backup" accept="application/json" hidden>
+</footer>
+
+<script>
+/* =========================================================================
+   Estado — guardado em localStorage, no formato:
+   {
+     guardado: number,
+     entradas: [{ id, nome, valor, tipo: 'fixa'|'unica', inicio: 'AAAA-MM' }],
+     contas:   [{ id, nome, valor, parcelas: n|null, inicio: 'AAAA-MM',
+                  ajustes: { 'AAAA-MM': valor }, pagas: { 'AAAA-MM': true } }],
+     historico: [{ quem: 'eu'|'app', texto }]
+   }
+   parcelas = null significa conta fixa, que se repete todo mes sem data pra acabar.
+   ajustes guarda mudanca de valor de um mes so; mexer em `valor` vale dai pra frente.
+   ========================================================================= */
+
+const CHAVE = 'contas.estado.v1';
+
+const vazio = () => ({ guardado: 0, entradas: [], contas: [], historico: [] });
+
+function carregar() {
+  try {
+    const cru = localStorage.getItem(CHAVE);
+    return cru ? { ...vazio(), ...JSON.parse(cru) } : vazio();
+  } catch {
+    return vazio();
+  }
+}
+
+let estado = carregar();
+
+function salvar() {
+  try {
+    localStorage.setItem(CHAVE, JSON.stringify(estado));
+  } catch (err) {
+    console.warn('Nao foi possivel salvar', err);
+  }
+}
+
+const novoId = () => Math.random().toString(36).slice(2, 9);
+
+/* ---------- meses ---------- */
+
+function mesDe(data) {
+  return data.getFullYear() + '-' + String(data.getMonth() + 1).padStart(2, '0');
+}
+
+const MES_HOJE = mesDe(new Date());
+let mesAtivo = MES_HOJE;
+
+function somaMeses(mes, n) {
+  const [a, m] = mes.split('-').map(Number);
+  const d = new Date(a, m - 1 + n, 1);
+  return mesDe(d);
+}
+
+function distancia(de, ate) {
+  const [a1, m1] = de.split('-').map(Number);
+  const [a2, m2] = ate.split('-').map(Number);
+  return (a2 - a1) * 12 + (m2 - m1);
+}
+
+const fmtMes = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+function rotuloMes(mes) {
+  const [a, m] = mes.split('-').map(Number);
+  const t = fmtMes.format(new Date(a, m - 1, 1));
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+function rotuloMesCurto(mes) {
+  const [a, m] = mes.split('-').map(Number);
+  return MESES_CURTOS[m - 1] + '/' + String(a).slice(2);
+}
+
+/* ---------- dinheiro ---------- */
+
+const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const dinheiro = (v) => fmtBRL.format(v || 0);
+
+/** Aceita "1.200,50", "1200.5", "R$ 89", "89,90" e devolve numero (ou null). */
+function lerValor(txt) {
+  if (txt == null) return null;
+  let s = String(txt).replace(/r\$/gi, '').trim().replace(/\s/g, '');
+  if (!s) return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number.parseFloat(s);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+}
+
+/* ---------- consultas ---------- */
+
+function entradaAtiva(e, mes) {
+  const d = distancia(e.inicio, mes);
+  return e.tipo === 'unica' ? d === 0 : d >= 0;
+}
+
+function contaAtiva(c, mes) {
+  const d = distancia(c.inicio, mes);
+  if (d < 0) return false;
+  return c.parcelas == null || d < c.parcelas;
+}
+
+/** Valor da conta naquele mes: o ajuste pontual, se houver, senao o valor corrente. */
+function valorNoMes(c, mes) {
+  const aj = c.ajustes && c.ajustes[mes];
+  return typeof aj === 'number' ? aj : c.valor;
+}
+
+function parcelaNoMes(c, mes) {
+  return distancia(c.inicio, mes) + 1;
+}
+
+function estaPaga(c, mes) {
+  return !!(c.pagas && c.pagas[mes]);
+}
+
+function entradasDoMes(mes) {
+  return estado.entradas.filter((e) => entradaAtiva(e, mes));
+}
+
+function contasDoMes(mes) {
+  return estado.contas.filter((c) => contaAtiva(c, mes));
+}
+
+function totalEntradas(mes) {
+  return entradasDoMes(mes).reduce((s, e) => s + e.valor, 0);
+}
+
+function totalContas(mes) {
+  return contasDoMes(mes).reduce((s, c) => s + valorNoMes(c, mes), 0);
+}
+
+function totalAPagar(mes) {
+  return contasDoMes(mes).reduce((s, c) => s + (estaPaga(c, mes) ? 0 : valorNoMes(c, mes)), 0);
+}
+
+function sobraDoMes(mes) {
+  return totalEntradas(mes) - totalContas(mes);
+}
+
+/** Quanto ainda falta pagar de uma divida, do mes informado ate a ultima parcela. */
+function saldoDevedor(c, desdeMes) {
+  if (c.parcelas == null) return null; // conta fixa nao tem fim
+  let total = 0;
+  for (let i = 0; i < c.parcelas; i++) {
+    const m = somaMeses(c.inicio, i);
+    if (distancia(desdeMes, m) < 0) continue;
+    if (estaPaga(c, m)) continue;
+    total += valorNoMes(c, m);
+  }
+  return Math.round(total * 100) / 100;
+}
+
+function parcelasRestantes(c, desdeMes) {
+  if (c.parcelas == null) return null;
+  const passadas = Math.max(0, distancia(c.inicio, desdeMes));
+  return Math.max(0, c.parcelas - passadas);
+}
+
+/** Projecao dos proximos N meses a partir de `mes`, com a reserva acumulada. */
+function projecao(mes, n = 12) {
+  let guardado = estado.guardado;
+  const linhas = [];
+  for (let i = 0; i < n; i++) {
+    const m = somaMeses(mes, i);
+    const entra = totalEntradas(m);
+    const sai = totalContas(m);
+    const sobra = entra - sai;
+    guardado += sobra;
+    linhas.push({ mes: m, entra, sai, sobra, guardado });
+  }
+  return linhas;
+}
+</script>
+
+<script>
+/* =========================================================================
+   Acoes — tudo que muda o estado passa por aqui e devolve uma frase pro chat.
+   ========================================================================= */
+
+function addEntrada({ nome, valor, tipo = 'fixa', inicio = mesAtivo }) {
+  const e = { id: novoId(), nome, valor, tipo, inicio };
+  estado.entradas.push(e);
+  salvar();
+  return e;
+}
+
+function addConta({ nome, valor, parcelas = null, inicio = mesAtivo }) {
+  const c = { id: novoId(), nome, valor, parcelas, inicio, ajustes: {}, pagas: {} };
+  estado.contas.push(c);
+  salvar();
+  return c;
+}
+
+function remover(item) {
+  estado.entradas = estado.entradas.filter((e) => e !== item);
+  estado.contas = estado.contas.filter((c) => c !== item);
+  salvar();
+}
+
+/** Muda o valor da conta. `soEsteMes` cria um ajuste pontual; senao vale dai pra frente. */
+function mudarValor(c, valor, soEsteMes) {
+  if (soEsteMes) {
+    c.ajustes = c.ajustes || {};
+    c.ajustes[mesAtivo] = valor;
+  } else {
+    c.valor = valor;
+    // o valor novo vale deste mes em diante, entao ajustes pontuais daqui pra frente caem
+    for (const m of Object.keys(c.ajustes || {})) {
+      if (distancia(mesAtivo, m) >= 0) delete c.ajustes[m];
+    }
+  }
+  salvar();
+}
+
+function alternarPaga(c, mes = mesAtivo) {
+  c.pagas = c.pagas || {};
+  if (c.pagas[mes]) delete c.pagas[mes];
+  else c.pagas[mes] = true;
+  salvar();
+  return !!c.pagas[mes];
+}
+
+function mexerGuardado(delta, absoluto = false) {
+  estado.guardado = Math.round((absoluto ? delta : estado.guardado + delta) * 100) / 100;
+  if (estado.guardado < 0) estado.guardado = 0;
+  salvar();
+  return estado.guardado;
+}
+
+/* ---------- achar item pelo nome escrito ---------- */
+
+const semAcento = (s) =>
+  String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+const PALAVRAS_VAZIAS = new Set(['a', 'o', 'as', 'os', 'de', 'do', 'da', 'no', 'na', 'em', 'meu', 'minha', 'conta', 'do', 'mes']);
+
+function pontuacaoNome(alvo, busca) {
+  const A = semAcento(alvo);
+  const B = semAcento(busca);
+  if (!B) return 0;
+  if (A === B) return 100;
+  if (A.includes(B)) return 80 - (A.length - B.length) * 0.1;
+  if (B.includes(A)) return 70 - (B.length - A.length) * 0.1;
+  const palavras = B.split(/\s+/).filter((p) => p.length > 2 && !PALAVRAS_VAZIAS.has(p));
+  const acertos = palavras.filter((p) => A.includes(p)).length;
+  return acertos ? 40 + acertos * 5 : 0;
+}
+
+/** Procura em contas e entradas. `onde` limita a busca ('contas' | 'entradas'). */
+function acharItem(busca, onde = 'tudo') {
+  const lista = [];
+  if (onde !== 'entradas') for (const c of estado.contas) lista.push({ item: c, tipo: 'conta' });
+  if (onde !== 'contas') for (const e of estado.entradas) lista.push({ item: e, tipo: 'entrada' });
+  let melhor = null;
+  for (const cand of lista) {
+    const p = pontuacaoNome(cand.item.nome, busca);
+    if (p > 0 && (!melhor || p > melhor.p)) melhor = { ...cand, p };
+  }
+  return melhor;
+}
+
+/* =========================================================================
+   Dicas — leem a situacao do mes e da projecao e sugerem o proximo passo.
+   ========================================================================= */
+
+function gerarDicas() {
+  const dicas = [];
+  const entra = totalEntradas(mesAtivo);
+  const sai = totalContas(mesAtivo);
+  const sobra = entra - sai;
+  const contas = contasDoMes(mesAtivo);
+  const linhas = projecao(mesAtivo, 12);
+
+  if (!estado.entradas.length && !estado.contas.length) {
+    dicas.push({ ico: '👋', texto: 'Comece contando quanto você recebe: escreva <b>salário 3000</b> no chat ao lado. Depois vá somando as contas, tipo <b>luz 180</b> ou <b>cartão 600 em 5x</b>.' });
+    return dicas;
+  }
+
+  if (!entra) {
+    dicas.push({ ico: '💡', texto: 'Ainda não sei quanto entra neste mês. Escreva <b>salário 2500</b> (ou o valor que for) pra eu conseguir calcular o que sobra.' });
+  }
+
+  /* --- fôlego do mês --- */
+  if (entra > 0) {
+    const perc = (sai / entra) * 100;
+    if (sobra < 0) {
+      dicas.push({
+        ico: '🚨',
+        texto: `Neste mês falta <b>${dinheiro(Math.abs(sobra))}</b> pra fechar as contas. Se der, negocie a conta maior pra adiar ou dividir uma parcela — e evite parcelar coisa nova até isso virar.`
+      });
+    } else if (perc > 80) {
+      dicas.push({
+        ico: '⚠️',
+        texto: `Suas contas comem <b>${perc.toFixed(0)}%</b> do que entra. Acima de 70% qualquer imprevisto vira dívida nova. Vale escolher uma conta pra cortar ou quitar antes das outras.`
+      });
+    } else if (perc <= 60) {
+      dicas.push({
+        ico: '✅',
+        texto: `Boa: as contas ocupam <b>${perc.toFixed(0)}%</b> do que entra e sobram <b>${dinheiro(sobra)}</b>. Guardar isso logo que o salário cai funciona melhor do que esperar sobrar no fim do mês.`
+      });
+    }
+  }
+
+  /* --- meses no vermelho lá na frente --- */
+  const vermelhos = linhas.filter((l) => l.sobra < 0);
+  if (vermelhos.length) {
+    const p = vermelhos[0];
+    if (p.mes !== mesAtivo) {
+      dicas.push({
+        ico: '📅',
+        texto: `Atenção com <b>${rotuloMes(p.mes)}</b>: pelas contas de hoje faltam <b>${dinheiro(Math.abs(p.sobra))}</b> nesse mês. Dá pra se preparar guardando ${dinheiro(Math.abs(p.sobra) / Math.max(1, distancia(mesAtivo, p.mes)))} por mês até lá.`
+      });
+    }
+  }
+
+  /* --- quitar antecipado com a reserva --- */
+  const dividas = estado.contas
+    .filter((c) => c.parcelas != null && contaAtiva(c, mesAtivo))
+    .map((c) => ({ c, saldo: saldoDevedor(c, mesAtivo), restam: parcelasRestantes(c, mesAtivo) }))
+    .filter((d) => d.saldo > 0)
+    .sort((a, b) => a.saldo - b.saldo);
+
+  const colchao = sai; // um mês de contas como reserva mínima
+  if (dividas.length && estado.guardado > 0) {
+    const podeUsar = estado.guardado - colchao;
+    const alvo = dividas.find((d) => d.saldo <= podeUsar);
+    if (alvo) {
+      dicas.push({
+        ico: '🎯',
+        texto: `Você tem <b>${dinheiro(estado.guardado)}</b> guardado. Dava pra quitar <b>${alvo.c.nome}</b> agora (<b>${dinheiro(alvo.saldo)}</b>, ${alvo.restam} parcela${alvo.restam > 1 ? 's' : ''}) e ainda sobrar um mês de contas de reserva. Isso libera ${dinheiro(valorNoMes(alvo.c, mesAtivo))} por mês. Se a dívida não cobra juros, guardar rendendo também é escolha válida.`
+      });
+    } else if (estado.guardado < colchao) {
+      dicas.push({
+        ico: '🛟',
+        texto: `Sua reserva está em <b>${dinheiro(estado.guardado)}</b> e um mês de contas custa <b>${dinheiro(colchao)}</b>. Antes de adiantar parcela, chegue a pelo menos um mês guardado — é o que evita ter que parcelar a próxima emergência.`
+      });
+    }
+  }
+
+  /* --- bola de neve --- */
+  if (dividas.length >= 2) {
+    const menor = dividas[0];
+    dicas.push({
+      ico: '⛄',
+      texto: `Método bola de neve: ataque primeiro a menor dívida, <b>${menor.c.nome}</b> (faltam ${dinheiro(menor.saldo)} em ${menor.restam} parcela${menor.restam > 1 ? 's' : ''}). Quando ela acabar, jogue os ${dinheiro(valorNoMes(menor.c, mesAtivo))} que sobraram na próxima da fila em vez de gastar.`
+    });
+  }
+
+  /* --- a conta mais pesada --- */
+  if (contas.length && entra > 0) {
+    const maior = contas.slice().sort((a, b) => valorNoMes(b, mesAtivo) - valorNoMes(a, mesAtivo))[0];
+    const peso = (valorNoMes(maior, mesAtivo) / entra) * 100;
+    if (peso >= 25) {
+      dicas.push({
+        ico: '🔎',
+        texto: `<b>${maior.nome}</b> sozinha leva <b>${peso.toFixed(0)}%</b> do que entra (${dinheiro(valorNoMes(maior, mesAtivo))}). É a conta que mais vale renegociar, trocar de plano ou dividir com alguém.`
+      });
+    }
+  }
+
+  /* --- cartão que cresceu --- */
+  for (const c of contas) {
+    const aj = c.ajustes && c.ajustes[mesAtivo];
+    if (typeof aj === 'number' && aj > c.valor * 1.15) {
+      dicas.push({
+        ico: '💳',
+        texto: `<b>${c.nome}</b> veio ${dinheiro(aj - c.valor)} acima do normal neste mês. Se isso repetir por dois meses, o valor virou o novo normal — melhor atualizar o valor fixo com <b>mudar ${c.nome.toLowerCase()} para ${aj.toFixed(2).replace('.', ',')}</b>.`
+      });
+    }
+  }
+
+  /* --- fim da linha das parcelas --- */
+  const acabando = dividas.filter((d) => d.restam === 1);
+  if (acabando.length) {
+    const nomes = acabando.map((d) => d.c.nome).join(', ');
+    const liberado = acabando.reduce((s, d) => s + valorNoMes(d.c, mesAtivo), 0);
+    dicas.push({
+      ico: '🏁',
+      texto: `Última parcela de <b>${nomes}</b> neste mês. A partir do mês que vem sobram <b>${dinheiro(liberado)}</b> — decida agora pra onde vai esse dinheiro, senão ele some sozinho.`
+    });
+  }
+
+  /* --- reserva de emergência --- */
+  if (estado.guardado >= colchao && colchao > 0) {
+    const meses = estado.guardado / colchao;
+    if (meses < 3) {
+      dicas.push({
+        ico: '🏦',
+        texto: `Sua reserva cobre <b>${meses.toFixed(1)} mês</b> de contas. O alvo confortável é de 3 a 6 meses (${dinheiro(colchao * 3)} a ${dinheiro(colchao * 6)}), em algo que dê pra sacar no mesmo dia.`
+      });
+    }
+  }
+
+  /* --- quanto dá pra guardar --- */
+  if (sobra > 0 && dividas.length === 0 && estado.guardado >= colchao) {
+    dicas.push({
+      ico: '🌱',
+      texto: `Sem parcelas em aberto e com reserva feita: os <b>${dinheiro(sobra)}</b> que sobram já podem ir pra um objetivo de prazo maior. Anote com <b>guardei ${sobra.toFixed(2).replace('.', ',')}</b> pra eu acompanhar.`
+    });
+  }
+
+  if (!dicas.length) {
+    dicas.push({ ico: '👍', texto: 'Está tudo equilibrado por aqui. Continue anotando as contas conforme elas chegarem que eu aviso se algum mês apertar.' });
+  }
+
+  return dicas;
+}
+</script>
+
+<script>
+/* =========================================================================
+   Conversa — interpreta o que a pessoa escreve em portugues do dia a dia.
+   Cada funcao devolve { texto } com a resposta, ou { texto, erro: true }.
+   ========================================================================= */
+
+const AJUDA = `Pode escrever do seu jeito. Alguns exemplos:
+
+• salário 3200 — entrada que se repete todo mês
+• recebi 500 de freela — entrada só deste mês
+• luz 180 — conta fixa, todo mês
+• cartão nubank 450 em 6x — conta parcelada
+• gastei mais 120 no cartão — aumenta o valor
+• mudar luz para 210 — troca o valor
+• cartão só esse mês 880 — muda só o mês aberto
+• paguei a luz — risca a conta do mês
+• guardei 300 / tirei 150 da reserva / tenho guardado 2000
+• quanto sobra? — resumo do mês
+• dicas — ideias pra sobrar mais e quitar antes
+• remover cartão — apaga a conta`;
+
+/** Tira o token de parcelas do texto e devolve quantas sao (null = fixa). */
+function extrairParcelas(n) {
+  let parcelas;
+  let resto = n;
+
+  const emX = resto.match(/\b(?:em\s+)?(\d{1,3})\s*x\b/);
+  const emVezes = resto.match(/\b(?:em\s+|por\s+)?(\d{1,3})\s*(?:vezes|vez|parcelas|parcela|meses|mes)\b/);
+  const alvo = emX || emVezes;
+
+  if (alvo) {
+    parcelas = Number(alvo[1]);
+    resto = resto.replace(alvo[0], ' ');
+  } else if (/\b(fix[ao]|mensal|todo\s*mes|todos\s*os\s*meses|sempre)\b/.test(resto)) {
+    parcelas = null;
+    resto = resto.replace(/\b(fix[ao]|mensal|todo\s*mes|todos\s*os\s*meses|sempre)\b/g, ' ');
+  } else {
+    parcelas = null;
+  }
+  return { parcelas, resto };
+}
+
+/** Pega o ultimo numero do texto como valor e devolve o texto sem ele. */
+function extrairValor(n) {
+  const achados = [...n.matchAll(/(?:r\$\s*)?\d[\d.,]*/g)];
+  for (let i = achados.length - 1; i >= 0; i--) {
+    const v = lerValor(achados[i][0]);
+    if (v != null && v > 0) {
+      const resto = n.slice(0, achados[i].index) + ' ' + n.slice(achados[i].index + achados[i][0].length);
+      return { valor: v, resto };
+    }
+  }
+  return { valor: null, resto: n };
+}
+
+const LIXO_NOME = /\b(por\s*mes|ao\s*mes|reais|conta\s+d[oae]|a\s*conta|de|do|da|no|na|em|pra|para|com|meu|minha|o|a|os|as|e|que|so|apenas|esse|este|neste|nesse|mes|agora|ficou|virou|passou|subiu|mais|ainda|tambem|daqui|frente|sempre|todo)\b/g;
+
+function limparNome(n) {
+  let s = n.replace(/r\$/g, ' ').replace(/[.,;:!?]+/g, ' ');
+  s = s.replace(LIXO_NOME, ' ').replace(/\s+/g, ' ').trim();
+  return s;
+}
+
+/* Como o texto e lido sem acento, devolvemos os acentos nas palavras comuns. */
+const ACENTOS = {
+  salario: 'salário', cartao: 'cartão', agua: 'água', gas: 'gás', luz: 'luz',
+  condominio: 'condomínio', emprestimo: 'empréstimo', financiamento: 'financiamento',
+  farmacia: 'farmácia', academia: 'academia', mercado: 'mercado', credito: 'crédito',
+  saude: 'saúde', remedio: 'remédio', veiculo: 'veículo', combustivel: 'combustível',
+  previdencia: 'previdência', pensao: 'pensão', decimo: 'décimo', celular: 'celular',
+  faculdade: 'faculdade', mensalidade: 'mensalidade', seguro: 'seguro', mae: 'mãe',
+  pai: 'pai', irmao: 'irmão', consorcio: 'consórcio', prestacao: 'prestação',
+  parcelamento: 'parcelamento', tv: 'TV', ipva: 'IPVA', iptu: 'IPTU', inss: 'INSS'
+};
+
+function titulo(s) {
+  if (!s) return s;
+  const t = s.split(' ').map((p) => ACENTOS[p] || p).join(' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** Recorte de nome usado nos comandos: "paguei a luz" -> "luz". */
+function nomeDepoisDe(n, comando) {
+  return n.replace(comando, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function frasePeriodo(soEsteMes) {
+  return soEsteMes ? `só em ${rotuloMes(mesAtivo)}` : 'deste mês em diante';
+}
+
+function resumoTexto() {
+  const entra = totalEntradas(mesAtivo);
+  const sai = totalContas(mesAtivo);
+  const sobra = entra - sai;
+  const falta = totalAPagar(mesAtivo);
+  const linha = sobra >= 0
+    ? `sobram ${dinheiro(sobra)}`
+    : `faltam ${dinheiro(Math.abs(sobra))}`;
+  return `Em ${rotuloMes(mesAtivo)}: entram ${dinheiro(entra)}, saem ${dinheiro(sai)} — ${linha}.
+Ainda a pagar este mês: ${dinheiro(falta)}. Guardado: ${dinheiro(estado.guardado)}.`;
+}
+
+function interpretar(txt) {
+  const bruto = txt.trim();
+  const n = semAcento(bruto).replace(/\s+/g, ' ');
+  if (!n) return { texto: 'Escreve alguma coisa que eu anoto 🙂', erro: true };
+
+  const soEsteMes = /\b(so|apenas|somente)\s+(n?es[ts]e|este|esse)\s+mes\b|\bs[oó]\s+agora\b|\bnes[ts]e\s+mes\s+so\b/.test(n);
+  const daquiPraFrente = /\b(daqui\s+pra?\s+frente|de\s+agora\s+em\s+diante|todo\s*mes|sempre)\b/.test(n);
+
+  /* ---- ajuda ---- */
+  if (/^(ajuda|help|comandos|socorro|\?+)$/.test(n) || /\bcomo\s+(que\s+)?(uso|funciona|escrevo)\b/.test(n)) {
+    return { texto: AJUDA };
+  }
+
+  /* ---- dicas ---- */
+  if (/\b(dica|dicas|conselho|conselhos|sugest|me\s+ajuda|como\s+(eu\s+)?(quito|pago|saio|melhoro))\b/.test(n)) {
+    const d = gerarDicas().slice(0, 3)
+      .map((x) => `${x.ico} ${x.texto.replace(/<\/?b>/g, '')}`)
+      .join('\n\n');
+    return { texto: d + '\n\n(a lista completa está em “Dicas pra você”)' };
+  }
+
+  /* ---- resumo ---- */
+  if (/\b(quanto\s+(sobra|falta|tenho|da)|resumo|saldo|situacao|como\s+(estou|ta|esta)|fecha\s+o\s+mes)\b/.test(n)) {
+    return { texto: resumoTexto() };
+  }
+
+  /* ---- reserva / guardado ---- */
+  if (/\b(guardei|guardar|poupei|separei|reservei)\b/.test(n)) {
+    const { valor } = extrairValor(n);
+    if (valor == null) return { texto: 'Quanto você guardou? Ex.: “guardei 200”.', erro: true };
+    const novo = mexerGuardado(valor);
+    return { texto: `Anotado: +${dinheiro(valor)} na reserva. Total guardado: ${dinheiro(novo)}.` };
+  }
+  if (/\b(tirei|retirei|saquei|usei|gastei)\b.*\b(reserva|guardado|poupanca|guardei)\b/.test(n)) {
+    const { valor } = extrairValor(n);
+    if (valor == null) return { texto: 'Quanto você tirou da reserva? Ex.: “tirei 150 da reserva”.', erro: true };
+    const novo = mexerGuardado(-valor);
+    return { texto: `Tirei ${dinheiro(valor)} da reserva. Total guardado: ${dinheiro(novo)}.` };
+  }
+  if (/\b(tenho|reserva|guardado|poupanca|juntei)\b/.test(n) && /\b(guardado|reserva|poupanca|juntado)\b/.test(n)) {
+    const { valor } = extrairValor(n);
+    if (valor != null) {
+      const novo = mexerGuardado(valor, true);
+      return { texto: `Beleza, sua reserva agora é ${dinheiro(novo)}.` };
+    }
+    return { texto: `Você tem ${dinheiro(estado.guardado)} guardado.` };
+  }
+
+  /* ---- pagamentos ---- */
+  if (/^(nao\s+paguei|desmarcar|despagar|estornar)\b/.test(n)) {
+    const alvo = acharItem(nomeDepoisDe(n, /^(nao\s+paguei|desmarcar|despagar|estornar)/), 'contas');
+    if (!alvo) return { texto: 'Não achei essa conta. Escreve o nome como você cadastrou.', erro: true };
+    if (estaPaga(alvo.item, mesAtivo)) alternarPaga(alvo.item, mesAtivo);
+    return { texto: `${alvo.item.nome} voltou pra lista de ${rotuloMes(mesAtivo)} como não paga.` };
+  }
+  if (/^(paguei|quitei|pago|ja\s+paguei)\b/.test(n)) {
+    const busca = limparNome(nomeDepoisDe(n, /^(paguei|quitei|pago|ja\s+paguei)/));
+    const alvo = acharItem(busca, 'contas');
+    if (!alvo) return { texto: `Não achei a conta “${busca}”. Confere o nome ou cadastra ela primeiro.`, erro: true };
+    if (!contaAtiva(alvo.item, mesAtivo)) return { texto: `${alvo.item.nome} não cai em ${rotuloMes(mesAtivo)}.`, erro: true };
+    if (!estaPaga(alvo.item, mesAtivo)) alternarPaga(alvo.item, mesAtivo);
+    const falta = totalAPagar(mesAtivo);
+    return { texto: `✔ ${alvo.item.nome} marcada como paga em ${rotuloMes(mesAtivo)}. Ainda faltam ${dinheiro(falta)} pra fechar o mês.` };
+  }
+
+  /* ---- somar valor a uma conta ---- */
+  const somar = n.match(/^(?:gastei|usei|comprei|aumenta(?:r)?|somar?|soma|acrescenta(?:r)?|coloca(?:r)?)\s+(?:mais\s+)?(.*)$/);
+  if (somar && /\b(no|na|do|da|em|pro|pra)\b/.test(somar[1])) {
+    const { valor, resto } = extrairValor(somar[1]);
+    const busca = limparNome(resto);
+    if (valor == null) return { texto: 'Quanto foi a mais? Ex.: “gastei mais 120 no cartão”.', erro: true };
+    const alvo = acharItem(busca, 'contas');
+    if (!alvo) return { texto: `Não achei a conta “${busca}”.`, erro: true };
+    const c = alvo.item;
+    const pontual = soEsteMes || !daquiPraFrente && c.parcelas != null;
+    const atualNoMes = valorNoMes(c, mesAtivo);
+    const novo = Math.round((atualNoMes + valor) * 100) / 100;
+    mudarValor(c, novo, pontual);
+    return {
+      texto: `${c.nome}: ${dinheiro(atualNoMes)} → ${dinheiro(novo)} (${frasePeriodo(pontual)}). Agora ${sobraDoMes(mesAtivo) >= 0 ? `sobram ${dinheiro(sobraDoMes(mesAtivo))}` : `faltam ${dinheiro(Math.abs(sobraDoMes(mesAtivo)))}`} em ${rotuloMes(mesAtivo)}.` +
+        (pontual ? '\nSe esse valor virou o novo normal, escreva “mudar ' + c.nome.toLowerCase() + ' para ' + novo.toFixed(2).replace('.', ',') + '”.' : '')
+    };
+  }
+
+  /* ---- mudar valor ---- */
+  const mudar = n.match(/^(?:mudar?|muda|alterar?|altera|ajustar?|ajusta|trocar?|troca|corrigir|atualiza(?:r)?|poe|bota)\s+(.*)$/);
+  const virou = n.match(/^(.*?)\s+(?:agora\s+(?:e|esta|ficou|custa)|ficou(?:\s+em)?|virou|subiu\s+pra?|passou\s+pra?|caiu\s+pra?|custa)\s+(.*)$/);
+  if (mudar || virou) {
+    let parteNome, parteValor;
+    if (mudar) {
+      const m = mudar[1].match(/^(.*?)\s+(?:para|pra|por|em|=)\s+(.*)$/);
+      if (m) { parteNome = m[1]; parteValor = m[2]; }
+      else { const ev = extrairValor(mudar[1]); parteNome = ev.resto; parteValor = ev.valor == null ? '' : String(ev.valor); }
+    } else {
+      parteNome = virou[1];
+      parteValor = virou[2];
+    }
+    const valor = extrairValor(parteValor).valor;
+    const busca = limparNome(parteNome);
+    if (valor == null) return { texto: 'Qual o valor novo? Ex.: “mudar luz para 210”.', erro: true };
+    const alvo = acharItem(busca);
+    if (!alvo) {
+      return {
+        texto: `Não achei “${busca}” na lista. Se for uma conta nova, escreve só “${busca} ${String(valor).replace('.', ',')}”.`,
+        erro: true
+      };
+    }
+    if (alvo.tipo === 'entrada') {
+      const antes = alvo.item.valor;
+      alvo.item.valor = valor;
+      salvar();
+      return { texto: `${alvo.item.nome}: ${dinheiro(antes)} → ${dinheiro(valor)}.` };
+    }
+    const antes = valorNoMes(alvo.item, mesAtivo);
+    mudarValor(alvo.item, valor, soEsteMes);
+    return { texto: `${alvo.item.nome}: ${dinheiro(antes)} → ${dinheiro(valor)} (${frasePeriodo(soEsteMes)}). ${resumoTexto().split('\n')[0]}` };
+  }
+
+  /* ---- diminuir valor de uma conta ---- */
+  const menos = n.match(/^(?:diminui(?:r)?|reduzi(?:r)?|abate(?:r)?|baixa(?:r)?|tira(?:r)?|tire)\s+(.*)$/);
+  if (menos && /\b(no|na|do|da|em|de)\b/.test(menos[1]) && extrairValor(menos[1]).valor != null) {
+    const { valor, resto } = extrairValor(menos[1]);
+    const busca = limparNome(resto);
+    const alvo = acharItem(busca, 'contas');
+    if (alvo) {
+      const c = alvo.item;
+      const atual = valorNoMes(c, mesAtivo);
+      const novoValor = Math.max(0, Math.round((atual - valor) * 100) / 100);
+      const pontual = soEsteMes || (!daquiPraFrente && c.parcelas != null);
+      mudarValor(c, novoValor, pontual);
+      return { texto: `${c.nome}: ${dinheiro(atual)} → ${dinheiro(novoValor)} (${frasePeriodo(pontual)}).` };
+    }
+  }
+
+  /* ---- remover ---- */
+  if (/^(remover?|remove|apagar?|apaga|excluir?|exclui|deletar?|deleta|tirar?|tira|cancelar?|cancela)\b/.test(n)) {
+    const busca = limparNome(nomeDepoisDe(n, /^(remover?|remove|apagar?|apaga|excluir?|exclui|deletar?|deleta|tirar?|tira|cancelar?|cancela)/));
+    const alvo = acharItem(busca);
+    if (!alvo) return { texto: `Não achei “${busca}” pra remover.`, erro: true };
+    remover(alvo.item);
+    return { texto: `🗑 ${alvo.item.nome} saiu da lista.` };
+  }
+
+  /* ---- entradas ---- */
+  const ehEntrada = /\b(salario|sal|recebi|recebo|entrou|entrada|renda|ganhei|freela|bonus|bico|vendi|adiantamento|vale|decimo|13o|aposentadoria|pensao|aluguel\s+recebido|pix\s+de)\b/.test(n);
+  if (ehEntrada) {
+    const { valor, resto } = extrairValor(n);
+    if (valor == null) return { texto: 'Faltou o valor. Ex.: “salário 3200”.', erro: true };
+    const pontual = soEsteMes || /\b(recebi|entrou|ganhei|vendi|freela|bico|extra|adiantamento|13o|decimo)\b/.test(n);
+    let nome = limparNome(resto.replace(/\b(recebi|recebo|entrou|entrada|ganhei|vendi|tenho|de)\b/g, ' '));
+    if (!nome) nome = pontual ? 'Entrada extra' : 'Salário';
+    const jaTem = acharItem(nome, 'entradas');
+    if (jaTem && !pontual && jaTem.item.tipo === 'fixa' && pontuacaoNome(jaTem.item.nome, nome) >= 80) {
+      const antes = jaTem.item.valor;
+      jaTem.item.valor = valor;
+      salvar();
+      return { texto: `${jaTem.item.nome} já estava na lista — atualizei de ${dinheiro(antes)} para ${dinheiro(valor)}.` };
+    }
+    const e = addEntrada({ nome: titulo(nome), valor, tipo: pontual ? 'unica' : 'fixa' });
+    return {
+      texto: `+ ${e.nome}: ${dinheiro(valor)} ${pontual ? `só em ${rotuloMes(mesAtivo)}` : 'todo mês'}.\n${resumoTexto().split('\n')[0]}`
+    };
+  }
+
+  /* ---- conta nova (padrao) ---- */
+  const p = extrairParcelas(n);
+  const v = extrairValor(p.resto);
+  if (v.valor == null) {
+    return {
+      texto: 'Não entendi o valor. Tenta assim: “luz 180”, “cartão 450 em 6x” ou escreve “ajuda”.',
+      erro: true
+    };
+  }
+  let nome = limparNome(v.resto);
+  if (!nome) nome = 'Conta';
+  const existente = acharItem(nome, 'contas');
+  if (existente && pontuacaoNome(existente.item.nome, nome) >= 80) {
+    const antes = valorNoMes(existente.item, mesAtivo);
+    mudarValor(existente.item, v.valor, soEsteMes);
+    return { texto: `${existente.item.nome} já estava na lista — atualizei de ${dinheiro(antes)} para ${dinheiro(v.valor)} (${frasePeriodo(soEsteMes)}).` };
+  }
+  const c = addConta({ nome: titulo(nome), valor: v.valor, parcelas: p.parcelas });
+  const quando = c.parcelas == null
+    ? 'todo mês'
+    : `${c.parcelas}x, de ${rotuloMes(c.inicio)} até ${rotuloMes(somaMeses(c.inicio, c.parcelas - 1))}`;
+  return { texto: `+ ${c.nome}: ${dinheiro(c.valor)} — ${quando}.\n${resumoTexto().split('\n')[0]}` };
+}
+</script>
+
+<script>
+/* =========================================================================
+   Tela — desenha tudo a partir do estado e cuida dos cliques.
+   ========================================================================= */
+
+const $ = (id) => document.getElementById(id);
+
+function classeSaldo(v) { return v >= 0 ? 'pos' : 'neg'; }
+
+function render() {
+  const entra = totalEntradas(mesAtivo);
+  const sai = totalContas(mesAtivo);
+  const sobra = entra - sai;
+  const falta = totalAPagar(mesAtivo);
+
+  $('mes-label').textContent = rotuloMes(mesAtivo);
+  $('saldo-titulo').textContent = sobra >= 0 ? 'Sobra no mês' : 'Falta no mês';
+  $('saldo-valor').textContent = dinheiro(Math.abs(sobra));
+  $('saldo-valor').className = classeSaldo(sobra);
+
+  $('kpi-entradas').textContent = dinheiro(entra);
+  $('kpi-entradas-sub').textContent = `${entradasDoMes(mesAtivo).length} lançamento(s)`;
+  $('kpi-contas').textContent = dinheiro(sai);
+  $('kpi-contas-sub').textContent = entra > 0 ? `${((sai / entra) * 100).toFixed(0)}% do que entra` : 'sem entrada cadastrada';
+  $('kpi-falta').textContent = dinheiro(falta);
+  $('kpi-falta-sub').textContent = falta === 0 && sai > 0 ? 'tudo pago 🎉' : `${dinheiro(sai - falta)} já pago`;
+  $('kpi-guardado').textContent = dinheiro(estado.guardado);
+  $('kpi-guardado-sub').innerHTML = '<button type="button" id="btn-guardado" class="ghost">ajustar</button>';
+  $('btn-guardado').onclick = () => {
+    const r = window.prompt('Quanto você tem guardado hoje?', String(estado.guardado).replace('.', ','));
+    if (r == null) return;
+    const v = lerValor(r);
+    if (v == null) return;
+    mexerGuardado(v, true);
+    render();
+  };
+
+  $('total-entradas').textContent = dinheiro(entra);
+  $('total-contas').textContent = dinheiro(sai);
+
+  renderEntradas();
+  renderContas();
+  renderProjecao();
+  renderDicas();
+}
+
+function renderEntradas() {
+  const tb = $('tb-entradas');
+  tb.innerHTML = '';
+  const itens = entradasDoMes(mesAtivo);
+  if (!itens.length) {
+    tb.innerHTML = '<tr><td colspan="3" class="vazio">Nada cadastrado ainda. Escreva “salário 3000” no chat.</td></tr>';
+    return;
+  }
+  for (const e of itens) {
+    const tr = document.createElement('tr');
+    const sub = e.tipo === 'fixa' ? 'todo mês' : `só em ${rotuloMesCurto(e.inicio)}`;
+    tr.innerHTML = `
+      <td><span class="nome"></span><span class="sub">${sub}</span></td>
+      <td class="val"><input type="number" step="0.01" min="0" value="${e.valor}"></td>
+      <td class="acoes"><button type="button" class="ghost" title="Remover">✕</button></td>`;
+    tr.querySelector('.nome').textContent = e.nome;
+    tr.querySelector('input').onchange = (ev) => {
+      const v = lerValor(ev.target.value);
+      if (v == null) return render();
+      e.valor = v;
+      salvar();
+      render();
+    };
+    tr.querySelector('button').onclick = () => { remover(e); render(); };
+    tb.appendChild(tr);
+  }
+}
+
+function renderContas() {
+  const tb = $('tb-contas');
+  tb.innerHTML = '';
+  const itens = contasDoMes(mesAtivo);
+  if (!itens.length) {
+    tb.innerHTML = '<tr><td colspan="3" class="vazio">Nenhuma conta neste mês. Escreva “luz 180” ou “cartão 450 em 6x”.</td></tr>';
+    return;
+  }
+  for (const c of itens) {
+    const paga = estaPaga(c, mesAtivo);
+    const restam = parcelasRestantes(c, mesAtivo);
+    const sub = c.parcelas == null
+      ? 'todo mês'
+      : `parcela ${parcelaNoMes(c, mesAtivo)} de ${c.parcelas} · faltam ${dinheiro(saldoDevedor(c, mesAtivo))} em ${restam}x`;
+    const ajustada = c.ajustes && typeof c.ajustes[mesAtivo] === 'number';
+    const tr = document.createElement('tr');
+    if (paga) tr.className = 'paga';
+    tr.innerHTML = `
+      <td><span class="nome"></span>${ajustada ? '<span class="tag">valor só deste mês</span>' : ''}<span class="sub">${sub}</span></td>
+      <td class="val"><input type="number" step="0.01" min="0" value="${valorNoMes(c, mesAtivo)}"
+          title="${c.parcelas == null ? 'Vale deste mês em diante' : 'Vale só para este mês'}"></td>
+      <td class="acoes">
+        <button type="button" class="ghost pagar" title="${paga ? 'Desmarcar' : 'Marcar como paga'}">${paga ? '↺' : '✓'}</button>
+        <button type="button" class="ghost del" title="Remover">✕</button>
+      </td>`;
+    tr.querySelector('.nome').textContent = c.nome;
+    tr.querySelector('input').onchange = (ev) => {
+      const v = lerValor(ev.target.value);
+      if (v == null) return render();
+      mudarValor(c, v, c.parcelas != null);
+      render();
+    };
+    tr.querySelector('.pagar').onclick = () => { alternarPaga(c, mesAtivo); render(); };
+    tr.querySelector('.del').onclick = () => { remover(c); render(); };
+    tb.appendChild(tr);
+  }
+}
+
+function renderProjecao() {
+  const tb = $('tb-proj');
+  tb.innerHTML = '';
+  const linhas = projecao(mesAtivo, 12);
+  const teto = Math.max(...linhas.map((l) => Math.max(l.entra, l.sai)), 1);
+  for (const l of linhas) {
+    const tr = document.createElement('tr');
+    if (l.mes === mesAtivo) tr.className = 'atual';
+    tr.innerHTML = `
+      <td class="mes">${rotuloMesCurto(l.mes)}</td>
+      <td>${dinheiro(l.entra)}</td>
+      <td>${dinheiro(l.sai)}
+        <div class="barra${l.sai > l.entra ? ' ruim' : ''}"><i style="width:${Math.min(100, (l.sai / teto) * 100)}%"></i></div>
+      </td>
+      <td class="${classeSaldo(l.sobra)}">${l.sobra < 0 ? '−' : ''}${dinheiro(Math.abs(l.sobra))}</td>
+      <td class="${classeSaldo(l.guardado)}">${dinheiro(l.guardado)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function renderDicas() {
+  const box = $('dicas');
+  box.innerHTML = '';
+  for (const d of gerarDicas()) {
+    const div = document.createElement('div');
+    div.className = 'dica';
+    div.innerHTML = `<span class="ico">${d.ico}</span><p>${d.texto}</p>`;
+    box.appendChild(div);
+  }
+}
+
+/* ---------- chat ---------- */
+
+const SUGESTOES = ['quanto sobra?', 'dicas', 'salário 3000', 'cartão 450 em 6x', 'guardei 200', 'ajuda'];
+
+function renderChips() {
+  const box = $('chips');
+  box.innerHTML = '';
+  for (const s of SUGESTOES) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = s;
+    b.onclick = () => { $('chat-input').value = s; $('chat-input').focus(); };
+    box.appendChild(b);
+  }
+}
+
+function pintarMensagem({ quem, texto, erro }) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (quem === 'eu' ? 'eu' : 'app') + (erro ? ' erro' : '');
+  div.textContent = texto;
+  $('log').appendChild(div);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+
+function dizer(quem, texto, erro) {
+  estado.historico.push({ quem, texto, erro: !!erro });
+  if (estado.historico.length > 60) estado.historico = estado.historico.slice(-60);
+  salvar();
+  pintarMensagem({ quem, texto, erro });
+}
+
+function renderHistorico() {
+  $('log').innerHTML = '';
+  if (!estado.historico.length) {
+    pintarMensagem({ quem: 'app', texto: 'Oi! Me conta quanto você recebe e quais contas tem. Ex.: “salário 3200”, “luz 180”, “cartão 450 em 6x”.\nEscreva “ajuda” pra ver tudo que eu entendo.' });
+    return;
+  }
+  for (const m of estado.historico) pintarMensagem(m);
+}
+
+/* ---------- eventos ---------- */
+
+$('mes-ant').onclick = () => { mesAtivo = somaMeses(mesAtivo, -1); render(); };
+$('mes-prox').onclick = () => { mesAtivo = somaMeses(mesAtivo, 1); render(); };
+$('mes-hoje').onclick = () => { mesAtivo = MES_HOJE; render(); };
+
+$('form-entrada').onsubmit = (ev) => {
+  ev.preventDefault();
+  const nome = $('e-nome').value.trim();
+  const valor = lerValor($('e-valor').value);
+  if (!nome || valor == null) return;
+  addEntrada({ nome: titulo(nome), valor, tipo: $('e-tipo').value });
+  ev.target.reset();
+  render();
+};
+
+$('form-conta').onsubmit = (ev) => {
+  ev.preventDefault();
+  const nome = $('c-nome').value.trim();
+  const valor = lerValor($('c-valor').value);
+  const par = $('c-parcelas').value ? Number($('c-parcelas').value) : null;
+  if (!nome || valor == null) return;
+  addConta({ nome: titulo(nome), valor, parcelas: par && par > 0 ? par : null });
+  ev.target.reset();
+  render();
+};
+
+$('form-chat').onsubmit = (ev) => {
+  ev.preventDefault();
+  const txt = $('chat-input').value.trim();
+  if (!txt) return;
+  $('chat-input').value = '';
+  dizer('eu', txt);
+  let resposta;
+  try {
+    resposta = interpretar(txt);
+  } catch (err) {
+    console.error(err);
+    resposta = { texto: 'Me perdi aqui. Tenta escrever de outro jeito, ou digita “ajuda”.', erro: true };
+  }
+  dizer('app', resposta.texto, resposta.erro);
+  render();
+};
+
+$('btn-backup').onclick = () => {
+  const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `contas-do-mes-${MES_HOJE}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+$('btn-restaurar').onclick = () => $('file-backup').click();
+
+$('file-backup').onchange = async (ev) => {
+  const arq = ev.target.files[0];
+  if (!arq) return;
+  try {
+    const dados = JSON.parse(await arq.text());
+    estado = { ...vazio(), ...dados };
+    salvar();
+    renderHistorico();
+    render();
+  } catch {
+    window.alert('Não consegui ler esse arquivo de backup.');
+  }
+  ev.target.value = '';
+};
+
+$('btn-zerar').onclick = () => {
+  if (!window.confirm('Isso apaga entradas, contas e histórico deste navegador. Continuar?')) return;
+  estado = vazio();
+  salvar();
+  renderHistorico();
+  render();
+};
+
+renderChips();
+renderHistorico();
+render();
+</script>
+</body>
+</html>

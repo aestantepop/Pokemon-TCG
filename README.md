@@ -146,3 +146,57 @@ scripts/fetch-liga-prices.mjs     coleta de preços do Liga Pokémon
   preenchido pela API na primeira carga com internet.
 - Os tipos foram deduzidos das faixas de numeração do set (sets modernos são
   ordenados por tipo) e são sobrescritos pelos dados da API quando ela responde.
+
+---
+
+# Contas do Mês — organizador financeiro
+
+Segundo app deste repositório, no mesmo formato: **`contas.html`** é um arquivo
+único que abre com dois cliques, sem instalar nada e sem servidor.
+
+Ele responde uma pergunta só, o tempo todo: **quanto sobra (ou falta) este mês?**
+
+## O que dá pra fazer
+
+- **Entradas**: salário e tudo o mais que entra. Pode ser todo mês ou só neste mês.
+- **Contas e dívidas**: valor e **quantas vezes** a conta ainda vai aparecer.
+  Sem número de vezes, ela é fixa e se repete todo mês.
+- **Mudar valor quando a dívida cresce** — o caso do cartão em que você gastou
+  mais. Dá pra mudar só o mês aberto ou dali pra frente.
+- **Saldo em tempo real** no topo, mais o que já foi pago e o que ainda falta.
+- **Projeção de 12 meses**, com as parcelas caindo sozinhas quando acabam e a
+  reserva acumulada mês a mês.
+- **Quanto você tem guardado**, com registro de aportes e retiradas.
+- **Dicas** lidas da sua situação: mês que vai ficar no vermelho, conta que pesa
+  demais, qual dívida quitar primeiro (bola de neve), quando dá pra quitar com a
+  reserva e quanto falta pra reserva de emergência.
+
+## Conversando em vez de clicar
+
+O painel da direita entende português do dia a dia. Alguns exemplos:
+
+```
+salário 3200                    entrada que se repete todo mês
+recebi 500 de freela            entrada só deste mês
+luz 180                         conta fixa
+cartão nubank 450 em 6x         conta parcelada
+gastei mais 120 no cartão       aumenta o valor
+mudar luz para 210              troca o valor dali pra frente
+cartão só esse mês 880          muda só o mês aberto
+diminuir 50 no mercado          abate um valor
+paguei a luz                    risca a conta do mês
+guardei 300                     aporte na reserva
+tirei 150 da reserva            retirada
+tenho guardado 2000             define o total guardado
+quanto sobra?                   resumo do mês
+dicas                           ideias pra sobrar mais e quitar antes
+remover cartão                  apaga a conta
+```
+
+Escreva `ajuda` dentro do app pra ver a lista completa.
+
+## Onde os dados ficam
+
+Tudo em `localStorage`, só no navegador em que você usa — nada sai da máquina,
+não tem conta nem nuvem. No rodapé há **Baixar backup** e **Restaurar backup**
+(um `.json`) para trocar de navegador ou de computador, e **Apagar tudo**.
